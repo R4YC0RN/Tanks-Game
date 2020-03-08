@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="519b5b56-b03a-49e2-aca9-871875f96399" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="1" />
+  </component>
+  <component name="ProjectId" id="1YlqiZtIClM8TPr0QFgyoV2yHLs" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/Assets/Images" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="F:\Java\Tanks\src\Assets\Images" />
+      <recent name="F:\Java\Tanks\src" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="F:\Java\Tanks\src\Assets\Images" />
+      <recent name="F:\Java\Tanks\src" />
+      <recent name="D:\Tanks\src" />
+      <recent name="D:\Tanks\src\Assets\Images" />
+      <recent name="F:\Tanks\src\Assets\Images" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="Main" type="Application" factoryName="Application">
+      <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
+      <option name="MAIN_CLASS_NAME" value="com.tanksgame.game.Main" />
+      <module name="Tanks" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="519b5b56-b03a-49e2-aca9-871875f96399" name="Default Changelist" comment="" />
+      <created>1583527656572</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1583527656572</updated>
+      <workItem from="1583527659695" duration="1164000" />
+      <workItem from="1583558197907" duration="6732000" />
+      <workItem from="1583576882854" duration="3152000" />
+      <workItem from="1583588611021" duration="821000" />
+      <workItem from="1583595532032" duration="8465000" />
+      <workItem from="1583662740597" duration="60000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="2214" y="265" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1583528401865">
+      <screen x="1920" y="104" width="1680" height="1010" />
+    </state>
+    <state x="2214" y="265" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1040/1920.104.1680.1010@1920.104.1680.1010" timestamp="1583528401865" />
+    <state x="612" y="182" key="#com.intellij.ide.util.MemberChooser" timestamp="1583564766436">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="612" y="182" key="#com.intellij.ide.util.MemberChooser/0.0.1536.824@0.0.1536.824" timestamp="1583564766436" />
+    <state x="765" y="230" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583527801179" />
+    <state x="2489" y="394" key="#com.intellij.ide.util.TreeClassChooserDialog" timestamp="1583528388875">
+      <screen x="1920" y="104" width="1680" height="1010" />
+    </state>
+    <state x="2489" y="394" key="#com.intellij.ide.util.TreeClassChooserDialog/0.0.1920.1040/1920.104.1680.1010@1920.104.1680.1010" timestamp="1583528388875" />
+    <state x="690" y="268" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1583603002668">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="690" y="268" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583603002668" />
+    <state x="686" y="212" key="FileChooserDialogImpl" timestamp="1583595850898">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="549" y="168" key="FileChooserDialogImpl/0.0.1536.824@0.0.1536.824" timestamp="1583588647879" />
+    <state x="686" y="212" key="FileChooserDialogImpl/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583595850898" />
+    <state width="1877" height="269" key="GridCell.Tab.0.bottom" timestamp="1583662807486">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1493" height="210" key="GridCell.Tab.0.bottom/0.0.1536.824@0.0.1536.824" timestamp="1583580722543" />
+    <state width="1877" height="269" key="GridCell.Tab.0.bottom/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583662807486" />
+    <state width="1637" height="271" key="GridCell.Tab.0.bottom/0.0.1920.1040/1920.104.1680.1010@1920.104.1680.1010" timestamp="1583528692294" />
+    <state width="1877" height="269" key="GridCell.Tab.0.center" timestamp="1583662807486">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1493" height="210" key="GridCell.Tab.0.center/0.0.1536.824@0.0.1536.824" timestamp="1583580722542" />
+    <state width="1877" height="269" key="GridCell.Tab.0.center/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583662807486" />
+    <state width="1637" height="271" key="GridCell.Tab.0.center/0.0.1920.1040/1920.104.1680.1010@1920.104.1680.1010" timestamp="1583528692293" />
+    <state width="1877" height="269" key="GridCell.Tab.0.left" timestamp="1583662807486">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1493" height="210" key="GridCell.Tab.0.left/0.0.1536.824@0.0.1536.824" timestamp="1583580722542" />
+    <state width="1877" height="269" key="GridCell.Tab.0.left/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583662807486" />
+    <state width="1637" height="271" key="GridCell.Tab.0.left/0.0.1920.1040/1920.104.1680.1010@1920.104.1680.1010" timestamp="1583528692293" />
+    <state width="1877" height="269" key="GridCell.Tab.0.right" timestamp="1583662807486">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1493" height="210" key="GridCell.Tab.0.right/0.0.1536.824@0.0.1536.824" timestamp="1583580722542" />
+    <state width="1877" height="269" key="GridCell.Tab.0.right/0.0.1920.1040/1920.104.1680.1010@0.0.1920.1040" timestamp="1583662807486" />
+    <state width="1637" height="271" key="GridCell.Tab.0.right/0.0.1920.1040/1920.104.1680.1010@1920.104.1680.1010" timestamp="1583528692294" />
+    <state x="425" y="187" key="run.anything.popup" timestamp="1583564798943">
+      <screen x="0" y="0" width="1536" height="824" />
+    </state>
+    <state x="425" y="187" key="run.anything.popup/0.0.1536.824@0.0.1536.824" timestamp="1583564798943" />
+  </component>
+</project>
