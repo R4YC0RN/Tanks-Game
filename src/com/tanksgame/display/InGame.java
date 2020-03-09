@@ -22,7 +22,7 @@ public class InGame {
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: black;");
 
-        map = new GameMap(width, height);
+        map = new GameMap();
 
         gc = initGraphicsContext(root);
         myScene = new Scene(root, width, height, Color.BLACK);

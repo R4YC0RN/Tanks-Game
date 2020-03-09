@@ -1,16 +1,12 @@
 package com.tanksgame.maps;
 
-import java.util.ArrayList;
+import com.tanksgame.objects.Brick;
 
 public class MapTexture {
-    private ArrayList<MapValues> maps;
+
+    private Brick brick;
 
     private static final int[][] tankPos =
-            {
-
-            };
-
-    private static final int[][] brickPos =
             {
 
             };
@@ -29,17 +25,6 @@ public class MapTexture {
             {
 
             };
-
-    public MapTexture(){
-        maps = new ArrayList<MapValues>();
-        initMapData();
-    }
-
-    private void initMapData(){
-        MapValues map = new MapValues(tankPos, brickPos, stonePos, towerPos, playerPos);
-        maps.add(map);
-    }
-
 
 
 }
