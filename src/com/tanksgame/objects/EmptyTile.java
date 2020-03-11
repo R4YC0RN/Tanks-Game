@@ -7,12 +7,12 @@ import javafx.scene.shape.Rectangle;
 public class EmptyTile extends Rectangle {
 
 
-    public EmptyTile(int x, int y){
+    public EmptyTile(){
         setWidth(GameMap.tileSize);
         setHeight(GameMap.tileSize);
 
         setFill(Color.BLACK);
-        setStroke(Color.PINK);
+        setStroke(Color.BLACK);
     }
 
 }

@@ -78,7 +78,7 @@ public class Main extends Application {
         GameMap map = new GameMap();
         //AnchorPane root = new AnchorPane(map.createMap());
         //AnchorPane.setTopAnchor(map.createMap(), 40.0);
-        Scene scene = new Scene(map.createMap());
+        Scene scene = new Scene(map.createMap(), 1280, 720);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
