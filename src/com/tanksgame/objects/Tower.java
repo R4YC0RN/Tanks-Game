@@ -7,7 +7,7 @@ import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
 
 public class Tower extends Rectangle {
-    Image towerImg = new Image("Assets/Images/tower.png");
+    private Image towerImg = new Image("Assets/Images/tower.png");
     public static final int[] towerPos = {7, 14};
     public Tower (){
         setWidth(GameMap.tileSize);
@@ -15,5 +15,9 @@ public class Tower extends Rectangle {
         setFill(new ImagePattern(towerImg));
         //setFill(Color.BLUE);
 
+    }
+
+    public Image getTowerImg(){
+        return towerImg;
     }
 }

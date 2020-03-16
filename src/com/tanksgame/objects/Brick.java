@@ -37,4 +37,8 @@ public class Brick extends Rectangle {
         setFill(new ImagePattern(brickImg));
     }
 
+    public Image getBrickImg(){
+        return brickImg;
+    }
+
 }
