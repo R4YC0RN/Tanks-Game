@@ -1,23 +1,19 @@
 package com.tanksgame.objects;
 
-import com.tanksgame.maps.GameMap;
+import com.tanksgame.maps.GameMapView;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.ImagePattern;
-import javafx.scene.shape.Rectangle;
 
-public class Tower extends Rectangle {
-    private Image towerImg = new Image("Assets/Images/tower.png");
+public class Tower {
+    private Image towerImg = new Image("assets/images/tower.png");
     public static final int[] towerPos = {7, 14};
-    public Tower (){
-        setWidth(GameMap.tileSize);
-        setHeight(GameMap.tileSize);
-        setFill(new ImagePattern(towerImg));
-        //setFill(Color.BLUE);
+    public Sprite sprite;
 
+    public Tower() {
+        sprite = new Sprite( towerPos[0], towerPos[1], GameMapView.tileSize);
+        sprite.setImage(towerImg);
     }
 
-    public Image getTowerImg(){
+    public Image getTowerImg() {
         return towerImg;
     }
 }

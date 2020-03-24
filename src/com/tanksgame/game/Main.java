@@ -1,14 +1,15 @@
 package com.tanksgame.game;
 
-import com.tanksgame.maps.GameMap;
+import com.tanksgame.maps.GameMapView;
+import com.tanksgame.objects.EnemyTank;
+import com.tanksgame.objects.Sprite;
+import com.tanksgame.objects.Tank;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
-import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -17,18 +18,26 @@ import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+
+import static java.lang.System.exit;
 
 public class Main extends Application {
     VBox root = new VBox();
-    GameMap map = new GameMap();
-    Canvas filedCanvas = new Canvas();
-    private GraphicsContext gc;
-    public double currentTankPosX = map.getTank().tankStartPos[0];
-    public double currentTankPosY = map.getTank().tankStartPos[1];
-    public double speed = 0.06;
+    GameMapView map = new GameMapView();
+    Canvas fieldCanvas = new Canvas();
+    Canvas leftHudCanvas = new Canvas();
+    Canvas rightHudCanvas = new Canvas();
+
+    private GraphicsContext gcMain;
+    private GraphicsContext gcLeftHud;
+    private GraphicsContext gcRightHud;
+    public double posBeforeX = map.getTank().currentTankPosX;
+    public double posBeforeY = map.getTank().currentTankPosY;
 
 
     public static void main(String[] args) {
@@ -41,16 +50,15 @@ public class Main extends Application {
         primaryStage.setTitle("Tanks");
         showMainMenu(primaryStage);
 
-
         primaryStage.setScene(new Scene(root, 1280, 720));
         primaryStage.show();
     }
 
-    public void showMainMenu(Stage primaryStage){
+    public void showMainMenu(Stage primaryStage) {
 
         root.setSpacing(10);
 
-        Image startBgImg = new Image("Assets/Images/startBackground.jpg");
+        Image startBgImg = new Image("assets/images/startBackground.jpg");
         BackgroundSize bgSize = new BackgroundSize(1280, 720, false, false,
                 false, false);
         BackgroundImage backgroundImg = new BackgroundImage(startBgImg, BackgroundRepeat.REPEAT,
@@ -64,12 +72,14 @@ public class Main extends Application {
 
         Button loadBtn = new Button("Load game");
         loadBtn.setPrefSize(200, 70);
-        loadBtn.setStyle("-fx-font-size: 28 arial;");
+        loadBtn.setStyle("-fx-font-size: 28 arial;" +
+                "-fx-background-color: grey; -fx-text-fill: white;");
         root.getChildren().add(loadBtn);
 
         Button newBtn = new Button("New game");
         newBtn.setPrefSize(200, 70);
-        newBtn.setStyle("-fx-font-size: 24 arial");
+        newBtn.setStyle("-fx-font-size: 28 arial;" +
+                "-fx-background-color: orange; -fx-text-fill: white;");
         newBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -80,11 +90,12 @@ public class Main extends Application {
 
         Button exitBtn = new Button("Exit");
         exitBtn.setPrefSize(200, 70);
-        exitBtn.setStyle("-fx-font-size: 24 arial");
+        exitBtn.setStyle("-fx-font-size: 28 arial;" +
+                "-fx-background-color: grey; -fx-text-fill: white;");
         exitBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                System.exit(0);
+                exit(0);
             }
         });
         root.getChildren().add(exitBtn);
@@ -95,10 +106,17 @@ public class Main extends Application {
         Scene scene = new Scene(map.createMap(), 1280, 720);
         primaryStage.setScene(scene);
         primaryStage.show();
-        filedCanvas = map.getCanvas();
-        gc = filedCanvas.getGraphicsContext2D();
-        ArrayList<String> input = new ArrayList<>();
+        fieldCanvas = map.getCanvas();
+        gcMain = fieldCanvas.getGraphicsContext2D();
+        leftHudCanvas = map.getLeftHudCanvas();
+        gcLeftHud = leftHudCanvas.getGraphicsContext2D();
+        rightHudCanvas = map.getRightHudCanvas();
+        gcRightHud = rightHudCanvas.getGraphicsContext2D();
 
+        gcLeftHud.setFill(Color.WHITE);
+        gcLeftHud.setFont(new Font(24));
+
+        ArrayList<String> input = new ArrayList<>();
 
         primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
             @Override
@@ -106,7 +124,6 @@ public class Main extends Application {
                 String code = event.getCode().toString();
                 if (!input.contains(code)) {
                     input.add(code);
-
                 }
             }
         });
@@ -119,43 +136,59 @@ public class Main extends Application {
             }
         });
 
-        new AnimationTimer(){
+        new AnimationTimer() {
             @Override
             public void handle(long now) {
+                Tank tank = map.getTank();
+                EnemyTank enemyTank = map.getEnemyTank();
+                tank.tankMoveSet(input, gcMain);
+                Iterator<Sprite> bricksIter = map.bricksList.iterator();
+                Iterator<Sprite> enemyIter = map.enemyTanksList.iterator();
+                boolean borderCollision = false;
+                if(tank.currentTankPosX < 0 || tank.currentTankPosX > GameMapView.width - Tank.tankSize / GameMapView.tileSize ||
+                        tank.currentTankPosY < 0 || tank.currentTankPosY > GameMapView.height - Tank.tankSize / GameMapView.tileSize){
+                    borderCollision = true;
+                }
+                if (borderCollision) {
+                    tank.currentTankPosX = posBeforeX;
+                    tank.currentTankPosY = posBeforeY;
+                }
+                while (bricksIter.hasNext()) {
+                    Sprite brick = bricksIter.next();
+                    if (tank.sprite.intersects(brick)) {
+                        tank.currentTankPosX = posBeforeX;
+                        tank.currentTankPosY = posBeforeY;
+                    }
+                }
+                while (enemyIter.hasNext()){
+                    Sprite enemy = enemyIter.next();
+                    if (tank.sprite.intersects(enemy)) {
+                        tank.currentTankPosX = posBeforeX;
+                        tank.currentTankPosY = posBeforeY;
+                    }
+                }
+                posBeforeX = tank.currentTankPosX;
+                posBeforeY = tank.currentTankPosY;
+                gcMain.clearRect(0, 0, 720, 720);
+                tank.render(gcMain);
+                enemyTank.render(gcMain);
 
-//                if(input.contains("UP") && !input.contains("LEFT") && !input.contains("RIGHT")) {
-//                    gc.clearRect(currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                    currentTankPosY -= speed;
-//                    gc.drawImage(map.getTank().getTank1UpImg(), currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                }
-//
-//                if(input.contains("DOWN") && !input.contains("LEFT") && !input.contains("RIGHT")) {
-//                    gc.clearRect(currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                    currentTankPosY += speed;
-//                    gc.drawImage(map.getTank().getTank1DownImg(), currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                }
-//
-//                if(input.contains("LEFT") && !input.contains("RIGHT")) {
-//                    gc.clearRect(currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                    currentTankPosX -= speed;
-//                    gc.drawImage(map.getTank().getTank1LeftImg(), currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                }
-//
-//                if(input.contains("RIGHT") && !input.contains("LEFT")) {
-//                    gc.clearRect(currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                    currentTankPosX += speed;
-//                    gc.drawImage(map.getTank().getTank1RightImg(), currentTankPosX * map.tileSize,
-//                            currentTankPosY * map.tileSize, map.tileSize, map.tileSize);
-//                }
-                map.getTank().tankMoveSet(input, gc);
+                map.getTower().sprite.render(gcMain);
+                for (Sprite enemy : map.enemyTanksList){
+                    enemy.render(gcMain);
+                }
+
+                for (Sprite sprite : map.bricksList) {
+                    sprite.render(gcMain);
+                }
+
+                String scoreText = "Score: ";
+                gcLeftHud.fillText(scoreText, 5,25);
+
+                //gcLeftHud.strokeText(scoreText, 20,20);
+
             }
         }.start();
     }
+
 }
