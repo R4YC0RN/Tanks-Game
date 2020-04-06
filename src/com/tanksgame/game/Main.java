@@ -1,9 +1,7 @@
 package com.tanksgame.game;
 
 import com.tanksgame.maps.GameMapView;
-import com.tanksgame.objects.EnemyTank;
-import com.tanksgame.objects.Sprite;
-import com.tanksgame.objects.Tank;
+import com.tanksgame.objects.*;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -39,6 +37,15 @@ public class Main extends Application {
     public double posBeforeX = map.getTank().currentTankPosX;
     public double posBeforeY = map.getTank().currentTankPosY;
 
+    public boolean spacePressed;
+    public boolean gameOver = false;
+
+    ArrayList<Sprite> bricks;
+    ArrayList<Sprite> brokenBricks;
+    ArrayList<Bullet> bullets;
+    ArrayList<Sprite> enemies;
+
+    public int score = 0;
 
     public static void main(String[] args) {
         launch(args);
@@ -49,7 +56,6 @@ public class Main extends Application {
 
         primaryStage.setTitle("Tanks");
         showMainMenu(primaryStage);
-
         primaryStage.setScene(new Scene(root, 1280, 720));
         primaryStage.show();
     }
@@ -83,6 +89,11 @@ public class Main extends Application {
         newBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                map.createMap();
+                bricks = new ArrayList<>(map.bricksList);
+                brokenBricks = new ArrayList<>(map.brokenBricksList);
+                enemies = new ArrayList<>(map.enemyTanksList);
+                System.out.println("IN this");
                 gameStart(primaryStage);
             }
         });
@@ -115,6 +126,12 @@ public class Main extends Application {
 
         gcLeftHud.setFill(Color.WHITE);
         gcLeftHud.setFont(new Font(24));
+        Tank tank = map.getTank();
+        Tower tower = map.getTower();
+        //bricks = map.bricksList;
+
+        bullets = new ArrayList<>(tank.bullets);
+        bullets = tank.bullets;
 
         ArrayList<String> input = new ArrayList<>();
 
@@ -122,12 +139,18 @@ public class Main extends Application {
             @Override
             public void handle(KeyEvent event) {
                 String code = event.getCode().toString();
-                if (!input.contains(code)) {
+                if (!input.contains(code) && !gameOver) {
                     input.add(code);
+                    if(code == "SPACE"){
+                        spacePressed = true;
+                        tank.addBullet();
+                    }
+                }
+                if(code == "ENTER" && gameOver){
+                    gameOver = false;
                 }
             }
         });
-
         primaryStage.addEventHandler(KeyEvent.KEY_RELEASED, new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent event) {
@@ -139,12 +162,13 @@ public class Main extends Application {
         new AnimationTimer() {
             @Override
             public void handle(long now) {
-                Tank tank = map.getTank();
                 EnemyTank enemyTank = map.getEnemyTank();
                 tank.tankMoveSet(input, gcMain);
-                Iterator<Sprite> bricksIter = map.bricksList.iterator();
-                Iterator<Sprite> enemyIter = map.enemyTanksList.iterator();
+                int bulletIndex = 0, enemyIndex = 0, brickIndex = 0, brokenBrickIndex = 0;
                 boolean borderCollision = false;
+                if(spacePressed && !gameOver){
+                    tank.shoot();
+                }
                 if(tank.currentTankPosX < 0 || tank.currentTankPosX > GameMapView.width - Tank.tankSize / GameMapView.tileSize ||
                         tank.currentTankPosY < 0 || tank.currentTankPosY > GameMapView.height - Tank.tankSize / GameMapView.tileSize){
                     borderCollision = true;
@@ -153,40 +177,118 @@ public class Main extends Application {
                     tank.currentTankPosX = posBeforeX;
                     tank.currentTankPosY = posBeforeY;
                 }
-                while (bricksIter.hasNext()) {
-                    Sprite brick = bricksIter.next();
+                for(bulletIndex = 0; bulletIndex < tank.bullets.size(); bulletIndex++){
+                    if(tank.bullets.get(bulletIndex).bulletPosX < 0 || tank.bullets.get(bulletIndex).bulletPosX > GameMapView.width - Bullet.bulletHeight / GameMapView.tileSize ||
+                            tank.bullets.get(bulletIndex).bulletPosY < 0 || tank.bullets.get(bulletIndex).bulletPosY > GameMapView.height - Bullet.bulletHeight / GameMapView.tileSize){
+                        tank.bullets.remove(bulletIndex);
+                        System.out.println("Deleted");
+                    }
+                }
+
+                for(brickIndex = 0; brickIndex < bricks.size(); brickIndex++) {
+                    Sprite brick = bricks.get(brickIndex);
                     if (tank.sprite.intersects(brick)) {
                         tank.currentTankPosX = posBeforeX;
                         tank.currentTankPosY = posBeforeY;
                     }
+                    for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                        Sprite bullet = bullets.get(bulletIndex).sprite;
+                        if(brick.intersects(bullet)){
+                            System.out.println("Wall");
+                            bricks.remove(brickIndex);
+                            bullets.remove(bulletIndex);
+                        }
+                    }
                 }
-                while (enemyIter.hasNext()){
-                    Sprite enemy = enemyIter.next();
+                for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++) {
+                    Sprite brokenBrick = brokenBricks.get(brokenBrickIndex);
+                    if (tank.sprite.intersects(brokenBrick)) {
+                        tank.currentTankPosX = posBeforeX;
+                        tank.currentTankPosY = posBeforeY;
+                    }
+                    for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                        Sprite bullet = bullets.get(bulletIndex).sprite;
+                        if(brokenBrick.intersects(bullet)){
+                            System.out.println("Wall broken");
+                            brokenBricks.remove(brokenBrickIndex);
+                            bullets.remove(bulletIndex);
+                        }
+                    }
+                }
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    Sprite enemy = enemies.get(enemyIndex);
                     if (tank.sprite.intersects(enemy)) {
                         tank.currentTankPosX = posBeforeX;
                         tank.currentTankPosY = posBeforeY;
+                    }
+                    for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                        Sprite bullet = bullets.get(bulletIndex).sprite;
+                        if(enemy.intersects(bullet)){
+                            System.out.println("Enemy");
+                            enemies.remove(enemyIndex);
+                            score += 100;
+                            bullets.remove(bulletIndex);
+                        }
+                    }
+                }
+
+                if(tank.sprite.intersects(tower.sprite)){
+                    tank.currentTankPosX = posBeforeX;
+                    tank.currentTankPosY = posBeforeY;
+                }
+
+                for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                    Sprite bullet = bullets.get(bulletIndex).sprite;
+                    if(tower.sprite.intersects(bullet)){
+                        System.out.println("Tower");
+                        gameOver = true;
                     }
                 }
                 posBeforeX = tank.currentTankPosX;
                 posBeforeY = tank.currentTankPosY;
                 gcMain.clearRect(0, 0, 720, 720);
-                tank.render(gcMain);
-                enemyTank.render(gcMain);
-
-                map.getTower().sprite.render(gcMain);
-                for (Sprite enemy : map.enemyTanksList){
-                    enemy.render(gcMain);
+                if(gameOver){
+                    tank.sprite.setPosition(GameMapView.tankStartPos[0], GameMapView.tankStartPos[1]);
+                    tank.currentTankPosX = GameMapView.tankStartPos[0];
+                    tank.currentTankPosY = GameMapView.tankStartPos[1];
+                    tank.resetTankOrient();
+                    score = 0;
+                    gcMain.setFill(Color.WHITE);
+                    gcMain.setFont(new Font(40));
+                    gcMain.fillText("Game Over", 250,300);
+                    gcMain.fillText("Press Enter to restart", 170, 350);
+                    gcLeftHud.clearRect(0,0,280,720);
+                    gcRightHud.clearRect(0,0,280,720);
+                    bricks = new ArrayList<>(map.bricksList);
+                    brokenBricks = new ArrayList<>(map.brokenBricksList);
+                    enemies = new ArrayList<>(map.enemyTanksList);
                 }
+                else{
+                    tank.sprite.render(gcMain);
 
-                for (Sprite sprite : map.bricksList) {
-                    sprite.render(gcMain);
+                    map.getTower().sprite.render(gcMain);
+                    for (Sprite enemy : enemies){
+                        enemy.render(gcMain);
+                    }
+                    for (Sprite brokenBrick : brokenBricks){
+                        brokenBrick.render(gcMain);
+                    }
+                    for (Sprite sprite : bricks) {
+                        sprite.render(gcMain);
+                    }
+                    for(Bullet bullet : tank.bullets){
+                        bullet.sprite.render(gcMain);
+                    }
+                    gcLeftHud.setStroke(Color.BROWN);
+                    gcLeftHud.setLineWidth(2.5);
+                    gcLeftHud.strokeRect(0,0, GameMapView.hudSizeHalf, GameMapView.tileSize * GameMapView.height);
+                    gcRightHud.setStroke(Color.BROWN);
+                    gcRightHud.setLineWidth(2.5);
+                    gcRightHud.strokeRect(0,0, GameMapView.hudSizeHalf, GameMapView.tileSize * GameMapView.height);
+                    gcLeftHud.clearRect(2,2,250,500);
+                    String scoreText = "Score: " + score;
+                    gcLeftHud.fillText(scoreText, 5,25);
                 }
-
-                String scoreText = "Score: ";
-                gcLeftHud.fillText(scoreText, 5,25);
-
-                //gcLeftHud.strokeText(scoreText, 20,20);
-
             }
         }.start();
     }

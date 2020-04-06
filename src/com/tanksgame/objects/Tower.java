@@ -9,11 +9,12 @@ public class Tower {
     public Sprite sprite;
 
     public Tower() {
-        sprite = new Sprite( towerPos[0], towerPos[1], GameMapView.tileSize);
+        sprite = new Sprite(towerPos[0], towerPos[1], GameMapView.tileSize);
         sprite.setImage(towerImg);
     }
 
     public Image getTowerImg() {
         return towerImg;
     }
+
 }

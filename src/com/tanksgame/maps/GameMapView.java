@@ -25,19 +25,21 @@ public class GameMapView {
 
     public static final int[][] enemyStartPos = {{6, 0}, {8, 0}};
 
+    public static final int[] tankStartPos = {5, 14};
+
     public static final double width = 15;
     public static final double height = 15;
     public static final double tileSize = 48;
     public static final double hudSizeHalf = 280;
-    private int numOfBricks;
-    private int numOfEnemyTanks;
 
     public ArrayList<Sprite> bricksList = new ArrayList<>();
     public ArrayList<Sprite> enemyTanksList = new ArrayList<>();
+    public ArrayList<Sprite> brokenBricksList = new ArrayList<>();
 
     private AnchorPane root;
 
     private Brick brick;
+    private Brick brokenBrick;
     private Tower tower;
     private Tank tank;
     private EnemyTank enemyTank;
@@ -51,10 +53,11 @@ public class GameMapView {
     private GraphicsContext gcRightHud;
 
     public GameMapView() {
-        numOfBricks = brickPos.length;
-        numOfEnemyTanks = enemyStartPos.length;
+
 
         brick = new Brick();
+        brokenBrick = new Brick();
+        brokenBrick.sprite.setImage(brokenBrick.getBrokenBrickImg());
         tower = new Tower();
         tank = new Tank();
         enemyTank = new EnemyTank();
@@ -94,6 +97,7 @@ public class GameMapView {
     }
 
     public Parent createMap() {
+        drawBrokenBricks();
         drawBricks();
         spawnTower();
         spawnTank();
@@ -102,12 +106,24 @@ public class GameMapView {
     }
 
     private void drawBricks() {
-        for (int bricksIndex = 0; bricksIndex < numOfBricks; bricksIndex++) {
+        bricksList.clear();
+        for (int bricksIndex = 0; bricksIndex < brickPos.length; bricksIndex++) {
             brick = new Brick();
             brick.sprite.setImage(brick.getBrickImg());
             brick.sprite.setPosition(brickPos[bricksIndex][0], brickPos[bricksIndex][1]);
             bricksList.add(brick.sprite);
         }
+    }
+
+    private void drawBrokenBricks(){
+        brokenBricksList.clear();
+        for(int brokenBricksIndex = 0; brokenBricksIndex < brickPos.length; brokenBricksIndex++){
+            brokenBrick = new Brick();
+            brokenBrick.sprite.setImage(brokenBrick.getBrokenBrickImg());
+            brokenBrick.sprite.setPosition(brickPos[brokenBricksIndex][0], brickPos[brokenBricksIndex][1]);
+            brokenBricksList.add(brokenBrick.sprite);
+        }
+        System.out.println("broken print");
     }
 
     private void spawnTower() {
@@ -119,7 +135,8 @@ public class GameMapView {
     }
 
     private void spawnEnemyTank() {
-        for(int enemyTankIndex = 0; enemyTankIndex < numOfEnemyTanks; enemyTankIndex++){
+        enemyTanksList.clear();
+        for(int enemyTankIndex = 0; enemyTankIndex < enemyStartPos.length; enemyTankIndex++){
             enemyTank = new EnemyTank(enemyStartPos[enemyTankIndex][0], enemyStartPos[enemyTankIndex][1]);
             enemyTank.sprite.setImage(enemyTank.getTank1DownImg());
             enemyTank.sprite.setPosition(enemyStartPos[enemyTankIndex][0], enemyStartPos[enemyTankIndex][1]);
