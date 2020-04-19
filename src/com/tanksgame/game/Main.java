@@ -2,6 +2,7 @@ package com.tanksgame.game;
 
 import com.tanksgame.maps.GameMapView;
 import com.tanksgame.objects.*;
+import com.tanksgame.threads.AddEnemyToField;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.event.ActionEvent;
@@ -19,8 +20,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 import static java.lang.System.exit;
 
@@ -39,13 +39,30 @@ public class Main extends Application {
 
     public boolean spacePressed;
     public boolean gameOver = false;
+    public boolean gameWin = false;
 
     ArrayList<Sprite> bricks;
     ArrayList<Sprite> brokenBricks;
     ArrayList<Bullet> bullets;
-    ArrayList<Sprite> enemies;
+    ArrayList<EnemyTank> enemies;
+    ArrayList<Sprite> metals;
+    Tank tank;
+    Tower tower;
 
     public int score = 0;
+    public int kills = 0;
+    public int totalEnemiesLeft = GameMapView.totalNumOfEnemy;
+    public int deadEnemies = 0;
+
+    int bulletIndex = 0, enemyIndex = 0, brickIndex = 0, brokenBrickIndex = 0;
+    int enemyIndexNext = 0;
+    int enemyBulletIndex = 0;
+    int enemyBulletIndexNext = 0;
+    int metalIndex = 0;
+
+    Timer timer = new Timer();
+    public AddEnemyToField addEnemyThread;
+    public boolean threadsForGameOverStopped = false;
 
     public static void main(String[] args) {
         launch(args);
@@ -93,7 +110,9 @@ public class Main extends Application {
                 bricks = new ArrayList<>(map.bricksList);
                 brokenBricks = new ArrayList<>(map.brokenBricksList);
                 enemies = new ArrayList<>(map.enemyTanksList);
-                System.out.println("IN this");
+                metals = new ArrayList<>(map.metalList);
+                tank = map.getTank();
+                tower = map.getTower();
                 gameStart(primaryStage);
             }
         });
@@ -117,6 +136,8 @@ public class Main extends Application {
         Scene scene = new Scene(map.createMap(), 1280, 720);
         primaryStage.setScene(scene);
         primaryStage.show();
+        addEnemyThread = new AddEnemyToField(enemies);
+        addEnemyThread.start();
         fieldCanvas = map.getCanvas();
         gcMain = fieldCanvas.getGraphicsContext2D();
         leftHudCanvas = map.getLeftHudCanvas();
@@ -126,12 +147,9 @@ public class Main extends Application {
 
         gcLeftHud.setFill(Color.WHITE);
         gcLeftHud.setFont(new Font(24));
-        Tank tank = map.getTank();
-        Tower tower = map.getTower();
-        //bricks = map.bricksList;
 
-        bullets = new ArrayList<>(tank.bullets);
         bullets = tank.bullets;
+        totalEnemiesLeft -= enemies.size();
 
         ArrayList<String> input = new ArrayList<>();
 
@@ -141,13 +159,24 @@ public class Main extends Application {
                 String code = event.getCode().toString();
                 if (!input.contains(code) && !gameOver) {
                     input.add(code);
-                    if(code == "SPACE"){
+                    if("SPACE".equals(code)){
                         spacePressed = true;
                         tank.addBullet();
                     }
                 }
-                if(code == "ENTER" && gameOver){
+                if("ENTER".equals(code) && (gameOver || gameWin)){
+                    totalEnemiesLeft = GameMapView.totalNumOfEnemy - enemies.size();
+                    restartGame();
+                    if(gameOver){
+                        score = 0;
+                    }
+                    //resetEnemies();
+                    threadsForGameOverStopped = false;
                     gameOver = false;
+                    gameWin = false;
+                }
+                if("ESCAPE".equals(code)){
+                    exit(0);
                 }
             }
         });
@@ -159,16 +188,23 @@ public class Main extends Application {
             }
         });
 
+
+
         new AnimationTimer() {
             @Override
             public void handle(long now) {
-                EnemyTank enemyTank = map.getEnemyTank();
                 tank.tankMoveSet(input, gcMain);
-                int bulletIndex = 0, enemyIndex = 0, brickIndex = 0, brokenBrickIndex = 0;
+
                 boolean borderCollision = false;
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    enemies.get(enemyIndex).enemyCollides = false;
+                    enemies.get(enemyIndex).borderCollision = false;
+                }
+
                 if(spacePressed && !gameOver){
                     tank.shoot();
                 }
+
                 if(tank.currentTankPosX < 0 || tank.currentTankPosX > GameMapView.width - Tank.tankSize / GameMapView.tileSize ||
                         tank.currentTankPosY < 0 || tank.currentTankPosY > GameMapView.height - Tank.tankSize / GameMapView.tileSize){
                     borderCollision = true;
@@ -177,6 +213,23 @@ public class Main extends Application {
                     tank.currentTankPosX = posBeforeX;
                     tank.currentTankPosY = posBeforeY;
                 }
+
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    if(enemies.get(enemyIndex).currentTankPosX < 0 || enemies.get(enemyIndex).currentTankPosX > GameMapView.width - EnemyTank.tankSize / GameMapView.tileSize ||
+                            enemies.get(enemyIndex).currentTankPosY < 0 || enemies.get(enemyIndex).currentTankPosY > GameMapView.height - EnemyTank.tankSize / GameMapView.tileSize){
+                        enemies.get(enemyIndex).borderCollision = true;
+                    }
+                }
+
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    if(enemies.get(enemyIndex).borderCollision){
+                        enemies.get(enemyIndex).currentTankPosX = enemies.get(enemyIndex).posBeforeX;
+                        enemies.get(enemyIndex).currentTankPosY = enemies.get(enemyIndex).posBeforeY;
+                        enemies.get(enemyIndex).sprite.setPosition(enemies.get(enemyIndex).posBeforeX, enemies.get(enemyIndex).posBeforeY);
+                        enemies.get(enemyIndex).changeOrient();
+                    }
+                }
+
                 for(bulletIndex = 0; bulletIndex < tank.bullets.size(); bulletIndex++){
                     if(tank.bullets.get(bulletIndex).bulletPosX < 0 || tank.bullets.get(bulletIndex).bulletPosX > GameMapView.width - Bullet.bulletHeight / GameMapView.tileSize ||
                             tank.bullets.get(bulletIndex).bulletPosY < 0 || tank.bullets.get(bulletIndex).bulletPosY > GameMapView.height - Bullet.bulletHeight / GameMapView.tileSize){
@@ -185,51 +238,23 @@ public class Main extends Application {
                     }
                 }
 
-                for(brickIndex = 0; brickIndex < bricks.size(); brickIndex++) {
-                    Sprite brick = bricks.get(brickIndex);
-                    if (tank.sprite.intersects(brick)) {
-                        tank.currentTankPosX = posBeforeX;
-                        tank.currentTankPosY = posBeforeY;
-                    }
-                    for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
-                        Sprite bullet = bullets.get(bulletIndex).sprite;
-                        if(brick.intersects(bullet)){
-                            System.out.println("Wall");
-                            bricks.remove(brickIndex);
-                            bullets.remove(bulletIndex);
-                        }
-                    }
-                }
-                for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++) {
-                    Sprite brokenBrick = brokenBricks.get(brokenBrickIndex);
-                    if (tank.sprite.intersects(brokenBrick)) {
-                        tank.currentTankPosX = posBeforeX;
-                        tank.currentTankPosY = posBeforeY;
-                    }
-                    for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
-                        Sprite bullet = bullets.get(bulletIndex).sprite;
-                        if(brokenBrick.intersects(bullet)){
-                            System.out.println("Wall broken");
-                            brokenBricks.remove(brokenBrickIndex);
-                            bullets.remove(bulletIndex);
-                        }
-                    }
-                }
+                checkBricksCollision();
+                checkBrokenBricksCollision();
+                checkEnemyTanksCollision();
+                checkMetalCollision();
+                checkEnemyBulletsCollision();
+
                 for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
-                    Sprite enemy = enemies.get(enemyIndex);
-                    if (tank.sprite.intersects(enemy)) {
-                        tank.currentTankPosX = posBeforeX;
-                        tank.currentTankPosY = posBeforeY;
+                    //enemies.get(enemyIndex).shoot(enemyIndex);
+                    if(!enemies.get(enemyIndex).threadCreated){
+                        enemies.get(enemyIndex).createAddBulletThread();
+                        enemies.get(enemyIndex).threadCreated = true;
                     }
-                    for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
-                        Sprite bullet = bullets.get(bulletIndex).sprite;
-                        if(enemy.intersects(bullet)){
-                            System.out.println("Enemy");
-                            enemies.remove(enemyIndex);
-                            score += 100;
-                            bullets.remove(bulletIndex);
-                        }
-                    }
+                    enemies.get(enemyIndex).shoot();
+                }
+
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    enemies.get(enemyIndex).shoot();
                 }
 
                 if(tank.sprite.intersects(tower.sprite)){
@@ -246,29 +271,65 @@ public class Main extends Application {
                 }
                 posBeforeX = tank.currentTankPosX;
                 posBeforeY = tank.currentTankPosY;
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    if(!enemies.get(enemyIndex).enemyCollides){
+                        enemies.get(enemyIndex).posBeforeX = enemies.get(enemyIndex).currentTankPosX;
+                        enemies.get(enemyIndex).posBeforeY = enemies.get(enemyIndex).currentTankPosY;
+                    }
+                }
+                if(GameMapView.totalNumOfEnemy == deadEnemies){
+                    gameWin = true;
+                }
                 gcMain.clearRect(0, 0, 720, 720);
                 if(gameOver){
-                    tank.sprite.setPosition(GameMapView.tankStartPos[0], GameMapView.tankStartPos[1]);
-                    tank.currentTankPosX = GameMapView.tankStartPos[0];
-                    tank.currentTankPosY = GameMapView.tankStartPos[1];
-                    tank.resetTankOrient();
-                    score = 0;
+                    if(!threadsForGameOverStopped){
+                        for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                            if(!threadsForGameOverStopped){
+                                enemies.get(enemyIndex).shootThread.stop();
+                            }
+                        }
+                        threadsForGameOverStopped = true;
+                    }
+                    addEnemyThread.stop();
+
                     gcMain.setFill(Color.WHITE);
                     gcMain.setFont(new Font(40));
                     gcMain.fillText("Game Over", 250,300);
                     gcMain.fillText("Press Enter to restart", 170, 350);
                     gcLeftHud.clearRect(0,0,280,720);
                     gcRightHud.clearRect(0,0,280,720);
-                    bricks = new ArrayList<>(map.bricksList);
-                    brokenBricks = new ArrayList<>(map.brokenBricksList);
-                    enemies = new ArrayList<>(map.enemyTanksList);
+
+                }else if(gameWin){
+                    if(!threadsForGameOverStopped){
+                        for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                            if(!threadsForGameOverStopped){
+                                enemies.get(enemyIndex).shootThread.stop();
+                            }
+                        }
+                        threadsForGameOverStopped = true;
+                        addEnemyThread.stop();
+                    }
+
+                    gcMain.setFill(Color.WHITE);
+                    gcMain.setFont(new Font(40));
+                    gcMain.fillText("You win", 250,300);
+                    gcMain.fillText("Your score: " + score, 200, 350);
+                    gcMain.fillText("Press Enter to continue", 160, 400);
+                    gcLeftHud.clearRect(0,0,280,720);
+                    gcRightHud.clearRect(0,0,280,720);
                 }
                 else{
                     tank.sprite.render(gcMain);
 
                     map.getTower().sprite.render(gcMain);
-                    for (Sprite enemy : enemies){
-                        enemy.render(gcMain);
+//                    for (EnemyTank enemy : enemies){
+//                        //enemy.run();
+//                        enemy.sprite.render(gcMain);
+//                    }
+                    for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                        //enemies.get(enemyIndex).run();
+                        enemies.get(enemyIndex).move();
+                        enemies.get(enemyIndex).sprite.render(gcMain);
                     }
                     for (Sprite brokenBrick : brokenBricks){
                         brokenBrick.render(gcMain);
@@ -276,8 +337,16 @@ public class Main extends Application {
                     for (Sprite sprite : bricks) {
                         sprite.render(gcMain);
                     }
+                    for(Sprite metal : metals){
+                        metal.render(gcMain);
+                    }
                     for(Bullet bullet : tank.bullets){
                         bullet.sprite.render(gcMain);
+                    }
+                    for(EnemyTank enemy : enemies){
+                        for(Bullet bullet : enemy.bullets){
+                            bullet.sprite.render(gcMain);
+                        }
                     }
                     gcLeftHud.setStroke(Color.BROWN);
                     gcLeftHud.setLineWidth(2.5);
@@ -293,4 +362,280 @@ public class Main extends Application {
         }.start();
     }
 
+    void checkBricksCollision(){
+        for(brickIndex = 0; brickIndex < bricks.size(); brickIndex++) {
+            Sprite brick = bricks.get(brickIndex);
+            if (tank.sprite.intersects(brick)) {
+                tank.currentTankPosX = posBeforeX;
+                tank.currentTankPosY = posBeforeY;
+            }
+            for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                Sprite bullet = bullets.get(bulletIndex).sprite;
+                if(brick.intersects(bullet)){
+                    System.out.println("Wall");
+                    bricks.remove(brickIndex);
+                    bullets.remove(bulletIndex);
+                }
+            }
+        }
+    }
+
+    void checkMetalCollision(){
+        for(metalIndex = 0; metalIndex < metals.size(); metalIndex++){
+            Sprite metal = metals.get(metalIndex);
+            if(tank.sprite.intersects(metal)){
+                tank.currentTankPosX = posBeforeX;
+                tank.currentTankPosY = posBeforeY;
+            }
+            for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                Sprite bullet = bullets.get(bulletIndex).sprite;
+                if(metal.intersects(bullet)){
+                    System.out.println("Metal");
+                    bullets.remove(bulletIndex);
+                }
+            }
+        }
+    }
+
+    void checkBrokenBricksCollision(){
+        for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++) {
+            Sprite brokenBrick = brokenBricks.get(brokenBrickIndex);
+            if (tank.sprite.intersects(brokenBrick)) {
+                tank.currentTankPosX = posBeforeX;
+                tank.currentTankPosY = posBeforeY;
+            }
+            for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                Sprite bullet = bullets.get(bulletIndex).sprite;
+                if(brokenBrick.intersects(bullet)){
+                    System.out.println("Wall broken");
+                    brokenBricks.remove(brokenBrickIndex);
+                    bullets.remove(bulletIndex);
+                }
+            }
+        }
+    }
+
+    void checkEnemyBulletsCollision(){
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                if(enemyBullet.bulletPosX < 0 || enemyBullet.bulletPosX > GameMapView.width - Bullet.bulletHeight / GameMapView.tileSize ||
+                        enemyBullet.bulletPosY < 0 || enemyBullet.bulletPosY > GameMapView.height - Bullet.bulletHeight / GameMapView.tileSize){
+                    enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                }
+            }
+        }
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                if (tank.sprite.intersects(enemyBullet.sprite) || tower.sprite.intersects(enemyBullet.sprite)) {
+                    gameOver = true;
+                }
+                for (brickIndex = 0; brickIndex < bricks.size(); brickIndex++) {
+                    Sprite brick = bricks.get(brickIndex);
+                    if (brick.intersects(enemyBullet.sprite)) {
+                        System.out.println("Wall");
+                        bricks.remove(brickIndex);
+                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                    }
+                }
+            }
+        }
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                for (metalIndex = 0; metalIndex < metals.size(); metalIndex++) {
+                    Sprite metal = metals.get(metalIndex);
+                    if (metal.intersects(enemyBullet.sprite)) {
+                        System.out.println("Metal");
+                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                    }
+                }
+            }
+        }
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++){
+                    Sprite brokenBrick = brokenBricks.get(brokenBrickIndex);
+                    if(brokenBrick.intersects(enemyBullet.sprite)){
+                        System.out.println("Wall broke");
+                        brokenBricks.remove(brokenBrickIndex);
+                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                    }
+                }
+            }
+        }
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                    Sprite bullet = bullets.get(bulletIndex).sprite;
+                    if(bullet.intersects(enemyBullet.sprite)){
+                        System.out.println("Bullet");
+                        bullets.remove(bulletIndex);
+                        //tank.bullets.remove(bulletIndex);
+                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                    }
+                }
+            }
+        }
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                for(enemyIndexNext = 0; enemyIndexNext < enemies.size(); enemyIndexNext++){
+                    if(enemyIndex == enemyIndexNext){
+                        continue;
+                    }
+                    for(enemyBulletIndexNext = 0; enemyBulletIndexNext < enemies.get(enemyIndexNext).bullets.size(); enemyBulletIndexNext++){
+                        Sprite enemyBulletNext = enemies.get(enemyIndexNext).bullets.get(enemyBulletIndexNext).sprite;
+                        if(enemyBulletNext.intersects(enemyBullet.sprite)){
+                            System.out.println("Enemy Bullet");             //тут может крашиться
+                            enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                            enemies.get(enemyIndexNext).bullets.remove(enemyBulletIndexNext);
+                        }
+                    }
+                }
+            }
+        }
+        boolean flag = false;
+        for(enemyIndex = 0; enemyIndex < enemies.size();enemyIndex++) {
+            for (enemyIndexNext = 0; enemyIndexNext < enemies.size(); enemyIndexNext++) {
+                if (enemyIndex == enemyIndexNext) {
+                    continue;
+                }
+                for (enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++) {
+                    Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
+                    Sprite enemyTank = enemies.get(enemyIndexNext).sprite;
+                    if (enemyTank.intersects(enemyBullet.sprite)) {
+                        System.out.println("Enemy");
+                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                        enemies.get(enemyIndexNext).shootThread.stop();
+                        enemies.remove(enemyIndexNext);
+                        deadEnemies++;
+                        flag = true;
+                    }
+                    if(flag){
+                        break;
+                    }
+                }
+                if(flag){
+                    break;
+                }
+            }
+            if (flag) {
+                break;
+            }
+        }
+    }
+
+    void checkEnemyTanksCollision() {
+        for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+            EnemyTank enemy = enemies.get(enemyIndex);
+            if (tank.sprite.intersects(enemy.sprite)) {
+                tank.currentTankPosX = posBeforeX;
+                tank.currentTankPosY = posBeforeY;
+                enemies.get(enemyIndex).currentTankPosX = enemies.get(enemyIndex).posBeforeX;
+                enemies.get(enemyIndex).currentTankPosY = enemies.get(enemyIndex).posBeforeY;
+                enemies.get(enemyIndex).sprite.setPosition(enemies.get(enemyIndex).posBeforeX, enemies.get(enemyIndex).posBeforeY);
+                enemies.get(enemyIndex).enemyCollides = true;
+                //enemies.get(enemyIndex).changeOrient();
+            }
+
+            for(enemyIndexNext = 0; enemyIndexNext < enemies.size(); enemyIndexNext++){
+                if(enemyIndex == enemyIndexNext){
+                    continue;
+                }
+                if(enemies.get(enemyIndexNext).sprite.intersects(enemies.get(enemyIndex).sprite)){
+                    enemies.get(enemyIndexNext).currentTankPosX = enemies.get(enemyIndexNext).posBeforeX;
+                    enemies.get(enemyIndexNext).currentTankPosY = enemies.get(enemyIndexNext).posBeforeY;
+                    enemies.get(enemyIndexNext).sprite.setPosition(enemies.get(enemyIndexNext).posBeforeX, enemies.get(enemyIndexNext).posBeforeY);
+                    enemies.get(enemyIndexNext).enemyCollides = true;
+                    enemies.get(enemyIndexNext).changeOrient();
+                    enemies.get(enemyIndex).currentTankPosX = enemies.get(enemyIndex).posBeforeX;
+                    enemies.get(enemyIndex).currentTankPosY = enemies.get(enemyIndex).posBeforeY;
+                    enemies.get(enemyIndex).sprite.setPosition(enemies.get(enemyIndex).posBeforeX, enemies.get(enemyIndex).posBeforeY);
+                    enemies.get(enemyIndex).enemyCollides = true;
+                    enemies.get(enemyIndex).changeOrient();
+                }
+            }
+
+            if(enemies.get(enemyIndex).sprite.intersects(tower.sprite)){
+                enemies.get(enemyIndex).currentTankPosX = enemies.get(enemyIndex).posBeforeX;
+                enemies.get(enemyIndex).currentTankPosY = enemies.get(enemyIndex).posBeforeY;
+                enemies.get(enemyIndex).sprite.setPosition(enemies.get(enemyIndex).posBeforeX, enemies.get(enemyIndex).posBeforeY);
+                enemies.get(enemyIndex).enemyCollides = true;
+                enemies.get(enemyIndex).changeOrient();
+            }
+
+            for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++){
+                Sprite brokenBrick = brokenBricks.get(brokenBrickIndex);
+                if (enemies.get(enemyIndex).sprite.intersects(brokenBrick)) {
+                    enemies.get(enemyIndex).currentTankPosX = enemies.get(enemyIndex).posBeforeX;
+                    enemies.get(enemyIndex).currentTankPosY = enemies.get(enemyIndex).posBeforeY;
+                    enemies.get(enemyIndex).sprite.setPosition(enemies.get(enemyIndex).posBeforeX, enemies.get(enemyIndex).posBeforeY);
+                    enemies.get(enemyIndex).enemyCollides = true;
+                    enemies.get(enemyIndex).changeOrient();
+                }
+            }
+
+            for(metalIndex = 0; metalIndex < metals.size(); metalIndex++){
+                Sprite metal = metals.get(metalIndex);
+                if(enemies.get(enemyIndex).sprite.intersects(metal)){
+                    enemies.get(enemyIndex).currentTankPosX = enemies.get(enemyIndex).posBeforeX;
+                    enemies.get(enemyIndex).currentTankPosY = enemies.get(enemyIndex).posBeforeY;
+                    enemies.get(enemyIndex).sprite.setPosition(enemies.get(enemyIndex).posBeforeX, enemies.get(enemyIndex).posBeforeY);
+                    enemies.get(enemyIndex).enemyCollides = true;
+                    enemies.get(enemyIndex).changeOrient();
+                }
+            }
+
+            for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                Sprite bullet = bullets.get(bulletIndex).sprite;
+                if(enemy.sprite.intersects(bullet)){
+                    System.out.println("Enemy");
+                    if(enemies.get(enemyIndex).shootThread != null){
+                        enemies.get(enemyIndex).shootThread.stop();
+                    };
+                    enemies.remove(enemyIndex);
+                    score += 100;
+                    deadEnemies++;
+                    kills++;
+                    bullets.remove(bulletIndex);
+                }
+            }
+        }
+    }
+
+    void resetEnemies(){
+        enemies = new ArrayList<>(map.enemyTanksList);
+        enemies = new ArrayList<>();
+        for(enemyIndex = 0; enemyIndex < map.enemyTanksList.size(); enemyIndex++){
+            EnemyTank enemyTank = new EnemyTank();
+            enemyTank.currentTankPosX = GameMapView.enemyStartPos[enemyIndex][0];
+            enemyTank.currentTankPosY = GameMapView.enemyStartPos[enemyIndex][1];
+            enemyTank.sprite.setPosition(GameMapView.enemyStartPos[enemyIndex][0], GameMapView.enemyStartPos[enemyIndex][1]);
+            enemyTank.sprite.setSize(EnemyTank.tankSize);
+            enemyTank.resetOrient();
+            enemies.add(enemyTank);
+        }
+    }
+
+    void restartGame(){
+        deadEnemies = 0;
+        tank.sprite.setPosition(GameMapView.tankStartPos[0], GameMapView.tankStartPos[1]);
+        tank.currentTankPosX = GameMapView.tankStartPos[0];
+        tank.currentTankPosY = GameMapView.tankStartPos[1];
+        tank.resetTankOrient();
+        bullets.clear();
+        enemies.clear();
+        bricks = new ArrayList<>(map.bricksList);
+        metals = new ArrayList<>(map.metalList);
+        brokenBricks = new ArrayList<>(map.brokenBricksList);
+        resetEnemies();
+        addEnemyThread = new AddEnemyToField(enemies);
+        addEnemyThread.start();
+    }
 }
+
+//Добавить убийтство танка при столкновении

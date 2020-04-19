@@ -14,16 +14,22 @@ public class GameMapView {
 
     public static final int[][] brickPos =
             {
-                    {1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 4},
-                    {5, 2}, {6, 2}, {8, 2}, {9, 2}, {11, 0}, {11, 1}, {11, 2}, {11, 3}, {11, 4},
-                    {13, 0}, {13, 1}, {13, 2}, {13, 3}, {13, 4}, {6, 5}, {8, 5}, {0, 7}, {2, 7}, {3, 7}, {4, 7},
-                    {6, 7}, {6, 8}, {6, 9}, {6, 10}, {7, 8}, {8, 7}, {8, 8}, {8, 9}, {8, 10}, {10, 7}, {11, 7}, {12, 7}, {14, 7},
+                    {1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}, {3, 3}, {3, 4},
+                    {5, 2}, {6, 2}, {8, 2}, {9, 2}, {11, 3}, {11, 4},
+                    {13, 0}, {13, 1}, {13, 2}, {13, 3}, {13, 4}, {6, 5}, {8, 5}, {2, 7}, {3, 7}, {4, 7},
+                    {6, 9}, {6, 10}, {8, 9}, {8, 10}, {10, 7}, {11, 7}, {12, 7},
                     {1, 10}, {1, 11}, {1, 12}, {1, 13}, {3, 10}, {3, 11}, {3, 12}, {3, 13},
                     {11, 10}, {11, 11}, {11, 12}, {11, 13}, {13, 10}, {13, 11}, {13, 12}, {13, 13},
                     {6, 14}, {6, 13}, {7, 13}, {8, 13}, {8, 14}
             };
 
-    public static final int[][] enemyStartPos = {{6, 0}, {8, 0}};
+    public static final int[][] metalPos =
+            {
+                    {3, 0}, {3, 1}, {3, 2}, {11, 0}, {11, 1}, {11, 2}, {0, 7}, {6, 7}, {6, 8}, {7, 8},
+                    {8, 7}, {8, 8}, {14, 7}
+            };
+
+    public static final int[][] enemyStartPos = {{6, 0}, {8, 0}, {4, 0}, {10, 0}};
 
     public static final int[] tankStartPos = {5, 14};
 
@@ -32,8 +38,12 @@ public class GameMapView {
     public static final double tileSize = 48;
     public static final double hudSizeHalf = 280;
 
+    public static final int totalNumOfEnemy = 14;
+    public static final int maxEnemyOnField = 6;
+
     public ArrayList<Sprite> bricksList = new ArrayList<>();
-    public ArrayList<Sprite> enemyTanksList = new ArrayList<>();
+    public ArrayList<Sprite> metalList = new ArrayList<>();
+    public ArrayList<EnemyTank> enemyTanksList = new ArrayList<>();
     public ArrayList<Sprite> brokenBricksList = new ArrayList<>();
 
     private AnchorPane root;
@@ -43,6 +53,7 @@ public class GameMapView {
     private Tower tower;
     private Tank tank;
     private EnemyTank enemyTank;
+    private Metal metal;
 
     private Canvas canvas;
     private Canvas leftHudCanvas;
@@ -61,6 +72,7 @@ public class GameMapView {
         tower = new Tower();
         tank = new Tank();
         enemyTank = new EnemyTank();
+        metal = new Metal();
         canvas = new Canvas(720, 720);
         leftHudCanvas = new Canvas(GameMapView.hudSizeHalf, GameMapView.tileSize * GameMapView.height);
         rightHudCanvas = new Canvas(GameMapView.hudSizeHalf, GameMapView.tileSize * GameMapView.height);
@@ -90,15 +102,16 @@ public class GameMapView {
 
         gcLeftHud.setStroke(Color.BROWN);
         gcLeftHud.setLineWidth(2.5);
-        gcLeftHud.strokeRect(0,0, hudSizeHalf, tileSize * height);
+        gcLeftHud.strokeRect(0, 0, hudSizeHalf, tileSize * height);
         gcRightHud.setStroke(Color.BROWN);
         gcRightHud.setLineWidth(2.5);
-        gcRightHud.strokeRect(0,0, hudSizeHalf, tileSize * height);
+        gcRightHud.strokeRect(0, 0, hudSizeHalf, tileSize * height);
     }
 
     public Parent createMap() {
         drawBrokenBricks();
         drawBricks();
+        drawMetal();
         spawnTower();
         spawnTank();
         spawnEnemyTank();
@@ -115,15 +128,25 @@ public class GameMapView {
         }
     }
 
-    private void drawBrokenBricks(){
+    private void drawBrokenBricks() {
         brokenBricksList.clear();
-        for(int brokenBricksIndex = 0; brokenBricksIndex < brickPos.length; brokenBricksIndex++){
+        for (int brokenBricksIndex = 0; brokenBricksIndex < brickPos.length; brokenBricksIndex++) {
             brokenBrick = new Brick();
             brokenBrick.sprite.setImage(brokenBrick.getBrokenBrickImg());
             brokenBrick.sprite.setPosition(brickPos[brokenBricksIndex][0], brickPos[brokenBricksIndex][1]);
             brokenBricksList.add(brokenBrick.sprite);
         }
         System.out.println("broken print");
+    }
+
+    private void drawMetal(){
+        metalList.clear();
+        for(int metalIndex = 0; metalIndex < metalPos.length; metalIndex++){
+            metal = new Metal();
+            metal.sprite.setImage(metal.getMetalImg());
+            metal.sprite.setPosition(metalPos[metalIndex][0], metalPos[metalIndex][1]);
+            metalList.add(metal.sprite);
+        }
     }
 
     private void spawnTower() {
@@ -136,12 +159,12 @@ public class GameMapView {
 
     private void spawnEnemyTank() {
         enemyTanksList.clear();
-        for(int enemyTankIndex = 0; enemyTankIndex < enemyStartPos.length; enemyTankIndex++){
+        for (int enemyTankIndex = 0; enemyTankIndex < enemyStartPos.length; enemyTankIndex++) {
             enemyTank = new EnemyTank(enemyStartPos[enemyTankIndex][0], enemyStartPos[enemyTankIndex][1]);
             enemyTank.sprite.setImage(enemyTank.getTank1DownImg());
             enemyTank.sprite.setPosition(enemyStartPos[enemyTankIndex][0], enemyStartPos[enemyTankIndex][1]);
             enemyTank.sprite.setSize(EnemyTank.tankSize);
-            enemyTanksList.add(enemyTank.sprite);
+            enemyTanksList.add(enemyTank);
         }
     }
 
@@ -149,11 +172,11 @@ public class GameMapView {
         return canvas;
     }
 
-    public Canvas getLeftHudCanvas(){
+    public Canvas getLeftHudCanvas() {
         return leftHudCanvas;
     }
 
-    public Canvas getRightHudCanvas(){
+    public Canvas getRightHudCanvas() {
         return rightHudCanvas;
     }
 
@@ -165,7 +188,7 @@ public class GameMapView {
         return tower;
     }
 
-    public EnemyTank getEnemyTank(){
+    public EnemyTank getEnemyTank() {
         return enemyTank;
     }
 
@@ -173,7 +196,7 @@ public class GameMapView {
         return bricksList;
     }
 
-    public AnchorPane getRoot(){
+    public AnchorPane getRoot() {
         return root;
     }
 }

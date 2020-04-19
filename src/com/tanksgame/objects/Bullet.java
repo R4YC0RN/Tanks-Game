@@ -56,4 +56,8 @@ public class Bullet {
     public Rectangle2D getBoundary() {
         return sprite.getBoundary(bulletPosX * GameMapView.tileSize, bulletPosY * GameMapView.tileSize, bulletWidth, bulletHeight);
     }
+
+    public void setSpeed(double speed){
+        this.speed = speed;
+    }
 }
