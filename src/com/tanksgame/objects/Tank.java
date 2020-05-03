@@ -14,6 +14,7 @@ public class Tank {
     public double currentTankPosX;
     public double currentTankPosY;
     public double speed;
+    public int lives;
     public int numberOfBullets;
     private String orient;
     private Image tank1UpImg = new Image("assets/images/tank1/tank1Up.png");
@@ -36,6 +37,7 @@ public class Tank {
         speed = 0.06;
         tank1CurrentOrient = tank1UpImg;
         numberOfBullets = 0;
+        lives = 3;
     }
 
     public Image getTank1DownImg() {

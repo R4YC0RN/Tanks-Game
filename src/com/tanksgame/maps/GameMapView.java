@@ -45,6 +45,7 @@ public class GameMapView {
     public ArrayList<Sprite> metalList = new ArrayList<>();
     public ArrayList<EnemyTank> enemyTanksList = new ArrayList<>();
     public ArrayList<Sprite> brokenBricksList = new ArrayList<>();
+    public ArrayList<Sprite> spawnPoints = new ArrayList<>();
 
     private AnchorPane root;
 
@@ -113,6 +114,7 @@ public class GameMapView {
         drawBricks();
         drawMetal();
         spawnTower();
+        createSpawnPoints();
         spawnTank();
         spawnEnemyTank();
         return root;
@@ -151,6 +153,16 @@ public class GameMapView {
 
     private void spawnTower() {
         tower.sprite.render(gcMain);
+    }
+
+    private void createSpawnPoints(){
+        spawnPoints.clear();
+        for(int spawnIndex = 0; spawnIndex < enemyStartPos.length; spawnIndex++){
+            Sprite point = new Sprite();
+            point.setPosition(enemyStartPos[spawnIndex][0], enemyStartPos[spawnIndex][1]);
+            point.setSize(tileSize);
+            spawnPoints.add(point);
+        }
     }
 
     private void spawnTank() {

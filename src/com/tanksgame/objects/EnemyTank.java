@@ -148,6 +148,10 @@ public class EnemyTank{
         return tank1DownImg;
     }
 
+    public Image getTank1UpImg(){
+        return tank1UpImg;
+    }
+
     public void resetOrient(){
         orient = "DOWN";
     }

@@ -14,7 +14,6 @@ public class EnemyAddBulletThread extends Thread{
 
     @Override
     public void run(){
-//        System.out.println("Thread has been interrupted");
         try{
             Thread.sleep(2000);
         }
@@ -28,9 +27,8 @@ public class EnemyAddBulletThread extends Thread{
             catch (InterruptedException e){
                 System.out.println("Thread has been interrupted");
             }
+            System.out.println(currentThread().getName());
             addBullet();
-            System.out.println(Thread.currentThread().getName() + " fished..." + "Bullets: " + enemy.bullets.size());
-
         }
     }
 
