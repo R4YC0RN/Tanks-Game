@@ -5,8 +5,9 @@ import com.tanksgame.objects.Bullet;
 import com.tanksgame.objects.EnemyTank;
 
 public class EnemyAddBulletThread extends Thread{
-    EnemyTank enemy = new EnemyTank();
+    EnemyTank enemy;
     private Bullet bullet;
+    public boolean pause = false;
 
     public EnemyAddBulletThread(EnemyTank enemy){
         this.enemy = enemy;
@@ -28,7 +29,9 @@ public class EnemyAddBulletThread extends Thread{
                 System.out.println("Thread has been interrupted");
             }
             System.out.println(currentThread().getName());
-            addBullet();
+            if(!enemy.shootPause){
+                addBullet();
+            }
         }
     }
 

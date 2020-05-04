@@ -12,6 +12,7 @@ public class AddEnemyToField extends Thread{
     private int totalNumOfEnemies = GameMapView.totalNumOfEnemy;
     private int numOfSpawned;
     private boolean[] canSpawn;
+    public boolean pause = false;
 
     public AddEnemyToField(ArrayList<EnemyTank> enemies){
         this.enemies = enemies;
@@ -53,13 +54,14 @@ public class AddEnemyToField extends Thread{
                     }
                 }
                 //int posToSet = pos;
-                EnemyTank enemyTank = new EnemyTank(GameMapView.enemyStartPos[pos][0], GameMapView.enemyStartPos[pos][1]);
-                enemyTank.sprite.setImage(enemyTank.getTank1DownImg());
-                enemyTank.sprite.setPosition(GameMapView.enemyStartPos[pos][0], GameMapView.enemyStartPos[pos][1]);
-                enemyTank.sprite.setSize(EnemyTank.tankSize);
-                enemies.add(enemyTank);
-                numOfSpawned++;
-                System.out.println("Number: " + numOfSpawned);
+                if(!pause){
+                    EnemyTank enemyTank = new EnemyTank(GameMapView.enemyStartPos[pos][0], GameMapView.enemyStartPos[pos][1]);
+                    enemyTank.sprite.setImage(enemyTank.getTank1DownImg());
+                    enemyTank.sprite.setPosition(GameMapView.enemyStartPos[pos][0], GameMapView.enemyStartPos[pos][1]);
+                    enemyTank.sprite.setSize(EnemyTank.tankSize);
+                    enemies.add(enemyTank);
+                    numOfSpawned++;
+                }
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {

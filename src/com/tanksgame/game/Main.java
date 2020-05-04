@@ -49,17 +49,20 @@ public class Main extends Application {
     public boolean gameWin = false;
     public boolean gamePause = false;
 
-    ArrayList<Sprite> bricks;
-    ArrayList<Sprite> brokenBricks;
-    ArrayList<Bullet> bullets;
-    ArrayList<EnemyTank> enemies;
-    ArrayList<Sprite> metals;
-    ArrayList<Sprite> spawnPoints;
-    Tank tank;
-    Tower tower;
+    ArrayList<Sprite> bricks = new ArrayList<>();
+    ArrayList<Sprite> brokenBricks = new ArrayList<>();
+    ArrayList<Bullet> bullets = new ArrayList<>();
+    ArrayList<EnemyTank> enemies = new ArrayList<>();
+    ArrayList<Sprite> metals = new ArrayList<>();
+    ArrayList<Sprite> spawnPoints = new ArrayList<>();
+    Tank tank = new Tank();
+    Tower tower = new Tower();
 
     public Image live = new Image("assets/images/heart.png");
     public Image enemyImg = new Image("assets/images/enemytank1/tankEnemy1Up.png");
+
+    int pressedTimes = 0;
+    boolean animationTimerStarted = false;
 
     public int score = 0;
     public int kills = 0;
@@ -85,8 +88,10 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
 
         primaryStage.setTitle("Tanks");
-        showMainMenu(primaryStage);
+        gameScene = new Scene(map.createMap(), 1280, 720);
         mainMenuScene = new Scene(root, 1280, 720);
+        showMainMenu(primaryStage);
+        createAnimationTimer(primaryStage);
         primaryStage.setScene(mainMenuScene);
         primaryStage.show();
     }
@@ -119,14 +124,22 @@ public class Main extends Application {
         newBtn.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
-                map.createMap();
-                bricks = new ArrayList<>(map.bricksList);
-                brokenBricks = new ArrayList<>(map.brokenBricksList);
-                spawnPoints = new ArrayList<>(map.spawnPoints);
-                enemies = new ArrayList<>(map.enemyTanksList);
-                metals = new ArrayList<>(map.metalList);
-                tank = map.getTank();
-                tower = map.getTower();
+                map.level = 1;
+                restartGame();
+                score = 0;
+                primaryStage.setScene(gameScene);
+                primaryStage.show();
+                fieldCanvas = map.getCanvas();
+                gcMain = fieldCanvas.getGraphicsContext2D();
+                leftHudCanvas = map.getLeftHudCanvas();
+                gcLeftHud = leftHudCanvas.getGraphicsContext2D();
+                rightHudCanvas = map.getRightHudCanvas();
+                gcRightHud = rightHudCanvas.getGraphicsContext2D();
+
+                gcLeftHud.setFill(Color.WHITE);
+                gcLeftHud.setFont(new Font(24));
+                gcRightHud.setFill(Color.WHITE);
+                gcRightHud.setFont(new Font(24));
                 gameStart(primaryStage);
             }
         });
@@ -147,27 +160,16 @@ public class Main extends Application {
 
 
     public void gameStart(Stage primaryStage) {
-        gameScene = new Scene(map.createMap(), 1280, 720);
-        primaryStage.setScene(gameScene);
-        primaryStage.show();
-        addEnemyThread = new AddEnemyToField(enemies);
-        addEnemyThread.start();
-        fieldCanvas = map.getCanvas();
-        gcMain = fieldCanvas.getGraphicsContext2D();
-        leftHudCanvas = map.getLeftHudCanvas();
-        gcLeftHud = leftHudCanvas.getGraphicsContext2D();
-        rightHudCanvas = map.getRightHudCanvas();
-        gcRightHud = rightHudCanvas.getGraphicsContext2D();
 
-        gcLeftHud.setFill(Color.WHITE);
-        gcLeftHud.setFont(new Font(24));
-        gcRightHud.setFill(Color.WHITE);
-        gcRightHud.setFont(new Font(24));
 
-        bullets = tank.bullets;
-        totalEnemiesLeft -= enemies.size();
+         animationTimer.start();
+    }
+
+    void createAnimationTimer(Stage primaryStage){
 
         ArrayList<String> input = new ArrayList<>();
+
+        totalEnemiesLeft -= enemies.size();
 
         primaryStage.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
             @Override
@@ -177,15 +179,24 @@ public class Main extends Application {
                     input.add(code);
                     if ("SPACE".equals(code)) {
                         spacePressed = true;
+                        pressedTimes++;
+                        System.out.println("Pressed: " + pressedTimes);
                         tank.addBullet();
                     }
                 }
                 if ("ENTER".equals(code) && (gameOver || gameWin)) {
                     totalEnemiesLeft = GameMapView.totalNumOfEnemy - enemies.size();
-                    restartGame();
                     if (gameOver) {
                         score = 0;
+                        map.level = 1;
                     }
+                    if(gameWin){
+                        map.level++;
+                        if(map.level > 2){
+                            map.level = 1;
+                        }
+                    }
+                    restartGame();
                     threadsForGameOverStopped = false;
                     gameOver = false;
                     gameWin = false;
@@ -193,17 +204,17 @@ public class Main extends Application {
                 if ("ESCAPE".equals(code)) {
                     gamePause = true;
                     animationTimer.stop();
+                    addEnemyThread.pause = true;
+                    for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                        enemies.get(enemyIndex).shootPause = true;
+                    }
                     Parent rootCopy = new StackPane();
                     Scene pauseScene = new Scene(pauseMenu(primaryStage), 1280,720);
                     primaryStage.setScene(pauseScene);
                 }
-                if("ENTER".equals(code) && gamePause){
-                    gamePause = false;
-                    primaryStage.setScene(gameScene);
-                    animationTimer.start();
-                }
             }
         });
+
         primaryStage.addEventHandler(KeyEvent.KEY_RELEASED, new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent event) {
@@ -212,11 +223,12 @@ public class Main extends Application {
             }
         });
 
-
-         animationTimer = new AnimationTimer(){
+        animationTimer = new AnimationTimer(){
             @Override
             public void handle(long now) {
+                animationTimerStarted = true;
                 tank.tankMoveSet(input, gcMain);
+                bullets = tank.bullets;
 
                 boolean borderCollision = false;
                 for (enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++) {
@@ -226,6 +238,9 @@ public class Main extends Application {
 
                 for (spawnIndex = 0; spawnIndex < spawnPoints.size(); spawnIndex++) {
                     addEnemyThread.setCanSpawn(true, spawnIndex);
+                }
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    enemies.get(enemyIndex).shootPause = false;
                 }
 
                 if (spacePressed && !gameOver) {
@@ -273,7 +288,6 @@ public class Main extends Application {
                     if (tank.bullets.get(bulletIndex).bulletPosX < 0 || tank.bullets.get(bulletIndex).bulletPosX > GameMapView.width - Bullet.bulletHeight / GameMapView.tileSize ||
                             tank.bullets.get(bulletIndex).bulletPosY < 0 || tank.bullets.get(bulletIndex).bulletPosY > GameMapView.height - Bullet.bulletHeight / GameMapView.tileSize) {
                         tank.bullets.remove(bulletIndex);
-                        System.out.println("Deleted");
                     }
                 }
 
@@ -304,7 +318,6 @@ public class Main extends Application {
                 for (bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++) {
                     Sprite bullet = bullets.get(bulletIndex).sprite;
                     if (tower.sprite.intersects(bullet)) {
-                        System.out.println("Tower");
                         gameOver = true;
                     }
                 }
@@ -344,8 +357,8 @@ public class Main extends Application {
                     if (!threadsForGameOverStopped) {
                         for (enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++) {
                             if (!threadsForGameOverStopped) {
-                                 enemies.get(enemyIndex).shootThread.stop();
-                                 //enemies.get(enemyIndex).shootThread.interrupt();
+                                enemies.get(enemyIndex).shootThread.stop();
+                                //enemies.get(enemyIndex).shootThread.interrupt();
                             }
                         }
                         threadsForGameOverStopped = true;
@@ -412,7 +425,6 @@ public class Main extends Application {
                 }
             }
         };
-         animationTimer.start();
     }
 
     void checkBricksCollision() {
@@ -425,7 +437,6 @@ public class Main extends Application {
             for (bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++) {
                 Sprite bullet = bullets.get(bulletIndex).sprite;
                 if (brick.intersects(bullet)) {
-                    System.out.println("Wall");
                     bricks.remove(brickIndex);
                     bullets.remove(bulletIndex);
                 }
@@ -443,7 +454,6 @@ public class Main extends Application {
             for (bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++) {
                 Sprite bullet = bullets.get(bulletIndex).sprite;
                 if (metal.intersects(bullet)) {
-                    System.out.println("Metal");
                     bullets.remove(bulletIndex);
                 }
             }
@@ -460,7 +470,6 @@ public class Main extends Application {
             for (bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++) {
                 Sprite bullet = bullets.get(bulletIndex).sprite;
                 if (brokenBrick.intersects(bullet)) {
-                    System.out.println("Wall broken");
                     brokenBricks.remove(brokenBrickIndex);
                     bullets.remove(bulletIndex);
                 }
@@ -488,9 +497,10 @@ public class Main extends Application {
                 for (brickIndex = 0; brickIndex < bricks.size(); brickIndex++) {
                     Sprite brick = bricks.get(brickIndex);
                     if (brick.intersects(enemyBullet.sprite)) {
-                        System.out.println("Wall");
                         bricks.remove(brickIndex);
-                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                        if(!enemies.get(enemyIndex).bullets.isEmpty()){
+                            enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                        }
                     }
                 }
             }
@@ -513,8 +523,9 @@ public class Main extends Application {
                 for (metalIndex = 0; metalIndex < metals.size(); metalIndex++) {
                     Sprite metal = metals.get(metalIndex);
                     if (metal.intersects(enemyBullet.sprite)) {
-                        System.out.println("Metal");
-                        enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                        if(!enemies.get(enemyIndex).bullets.isEmpty()){
+                            enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
+                        }
                     }
                 }
             }
@@ -525,7 +536,6 @@ public class Main extends Application {
                 for (brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++) {
                     Sprite brokenBrick = brokenBricks.get(brokenBrickIndex);
                     if (brokenBrick.intersects(enemyBullet.sprite)) {
-                        System.out.println("Wall broke");
                         brokenBricks.remove(brokenBrickIndex);
                         enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
                     }
@@ -538,7 +548,6 @@ public class Main extends Application {
                 for (bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++) {
                     Sprite bullet = bullets.get(bulletIndex).sprite;
                     if (bullet.intersects(enemyBullet.sprite)) {
-                        System.out.println("Bullet");
                         bullets.remove(bulletIndex);
                         //tank.bullets.remove(bulletIndex);
                         enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
@@ -556,7 +565,6 @@ public class Main extends Application {
                     for (enemyBulletIndexNext = 0; enemyBulletIndexNext < enemies.get(enemyIndexNext).bullets.size(); enemyBulletIndexNext++) {
                         Sprite enemyBulletNext = enemies.get(enemyIndexNext).bullets.get(enemyBulletIndexNext).sprite;
                         if (enemyBulletNext.intersects(enemyBullet.sprite)) {
-                            System.out.println("Enemy Bullet");             //тут может крашиться
                             enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
                             enemies.get(enemyIndexNext).bullets.remove(enemyBulletIndexNext);
                         }
@@ -574,7 +582,6 @@ public class Main extends Application {
                     Bullet enemyBullet = enemies.get(enemyIndex).bullets.get(enemyBulletIndex);
                     Sprite enemyTank = enemies.get(enemyIndexNext).sprite;
                     if (enemyTank.intersects(enemyBullet.sprite)) {
-                        System.out.println("Enemy");
                         enemies.get(enemyIndex).bullets.remove(enemyBulletIndex);
                         if (enemies.get(enemyIndexNext).shootThread != null) {
                             enemies.get(enemyIndexNext).shootThread.stop();
@@ -660,7 +667,6 @@ public class Main extends Application {
             for (bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++) {
                 Sprite bullet = bullets.get(bulletIndex).sprite;
                 if (enemy.sprite.intersects(bullet)) {
-                    System.out.println("Enemy");
                     if (enemies.get(enemyIndex).shootThread != null) {
                         enemies.get(enemyIndex).shootThread.stop();
                         //enemies.get(enemyIndex).shootThread.interrupt();
@@ -699,8 +705,12 @@ public class Main extends Application {
         tank.resetTankOrient();
         bullets.clear();
         enemies.clear();
+        map.drawBricks();
         bricks = new ArrayList<>(map.bricksList);
+        map.drawMetal();
         metals = new ArrayList<>(map.metalList);
+        spawnPoints = new ArrayList<>(map.spawnPoints);
+        map.drawBrokenBricks();
         brokenBricks = new ArrayList<>(map.brokenBricksList);
         resetEnemies();
         addEnemyThread = new AddEnemyToField(enemies);
@@ -734,6 +744,10 @@ public class Main extends Application {
             @Override
             public void handle(ActionEvent event) {
                 gamePause = false;
+                addEnemyThread.pause = false;
+                for(enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++){
+                    enemies.get(enemyIndex).shootPause = true;
+                }
                 primaryStage.setScene(gameScene);
                 animationTimer.start();
             }
@@ -746,6 +760,12 @@ public class Main extends Application {
         returnMainMenu.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                animationTimer.stop();
+                addEnemyThread.stop();
+                for (enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++) {
+                     enemies.get(enemyIndex).shootThread.stop();
+                    //enemies.get(enemyIndex).shootThread.interrupt();
+                }
                 primaryStage.setScene(mainMenuScene);
             }
         });

@@ -33,10 +33,10 @@ public class EnemyTank{
     public ArrayList<Bullet> bullets;
     public int timeToStartShoot;
     public int shootKD;
-    Timer shootTimer;
     public EnemyAddBulletThread shootThread;
     public int tankIndex;
     public boolean threadCreated = false;
+    public boolean shootPause = false;
 
     public String orient;
     private List<String> orients = Arrays.asList("UP", "DOWN", "LEFT", "RIGHT");
