@@ -5,6 +5,8 @@ import com.tanksgame.objects.*;
 import com.tanksgame.threads.AddEnemyToField;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -14,6 +16,7 @@ import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -22,12 +25,18 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.lang.System.exit;
 
 public class Main extends Application {
     VBox root = new VBox();
+    VBox replayRoot = new VBox();
     VBox pauseRoot = new VBox();
     GameMapView map = new GameMapView();
     Canvas fieldCanvas = new Canvas();
@@ -35,6 +44,15 @@ public class Main extends Application {
     Canvas rightHudCanvas = new Canvas();
     Scene mainMenuScene;
     Scene gameScene;
+    Scene replayMenu;
+    ListView<String> replaysList = new ListView<>();
+
+    public Image startBgImg = new Image("assets/images/startBackground.jpg");
+    BackgroundSize bgSize = new BackgroundSize(1280, 720, false, false,
+            false, false);
+    BackgroundImage backgroundImg = new BackgroundImage(startBgImg, BackgroundRepeat.REPEAT,
+            BackgroundRepeat.REPEAT, BackgroundPosition.CENTER, bgSize);
+    Background background = new Background(backgroundImg);
 
     private GraphicsContext gcMain;
     private GraphicsContext gcLeftHud;
@@ -43,6 +61,7 @@ public class Main extends Application {
     public double posBeforeY = map.getTank().currentTankPosY;
 
     public AnimationTimer animationTimer;
+    public AnimationTimer replayAnimationTimer;
 
     public boolean spacePressed;
     public boolean gameOver = false;
@@ -80,6 +99,19 @@ public class Main extends Application {
     public AddEnemyToField addEnemyThread;
     public boolean threadsForGameOverStopped = false;
 
+    FileWriter replayWrite;
+    FileReader replayRead;
+    File replay;
+    File replayFolder= new File("replays");
+    BufferedReader reader;
+
+    Bullet bullet = new Bullet();
+    EnemyTank enemy = new EnemyTank();
+    Sprite brokenBrick = new Sprite();
+    Sprite brick = new Sprite();
+    Sprite metal = new Sprite();
+
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -90,7 +122,11 @@ public class Main extends Application {
         primaryStage.setTitle("Tanks");
         gameScene = new Scene(map.createMap(), 1280, 720);
         mainMenuScene = new Scene(root, 1280, 720);
+        replayMenu = new Scene(replayRoot, 1280,720);
+        replayFolder.mkdir();
+        createReplayMenu(primaryStage);
         showMainMenu(primaryStage);
+        createAnimationTimerForReplay();
         createAnimationTimer(primaryStage);
         primaryStage.setScene(mainMenuScene);
         primaryStage.show();
@@ -98,13 +134,6 @@ public class Main extends Application {
 
     public void showMainMenu(Stage primaryStage) {
         root.setSpacing(10);
-
-        Image startBgImg = new Image("assets/images/startBackground.jpg");
-        BackgroundSize bgSize = new BackgroundSize(1280, 720, false, false,
-                false, false);
-        BackgroundImage backgroundImg = new BackgroundImage(startBgImg, BackgroundRepeat.REPEAT,
-                BackgroundRepeat.REPEAT, BackgroundPosition.CENTER, bgSize);
-        Background background = new Background(backgroundImg);
         root.setBackground(background);
 
         root.setSpacing(10);
@@ -136,6 +165,22 @@ public class Main extends Application {
                 rightHudCanvas = map.getRightHudCanvas();
                 gcRightHud = rightHudCanvas.getGraphicsContext2D();
 
+                replay = new File(replayFolder + "\\replay1.txt");
+
+                try{
+                    replay.createNewFile();
+                }
+                catch(IOException e){
+                    e.printStackTrace();
+                }
+
+                try{
+                    replayWrite = new FileWriter("replays/replay1.txt", false);
+                }
+                catch(IOException e){
+                    System.out.println(e.getMessage());
+                }
+
                 gcLeftHud.setFill(Color.WHITE);
                 gcLeftHud.setFont(new Font(24));
                 gcRightHud.setFill(Color.WHITE);
@@ -144,6 +189,40 @@ public class Main extends Application {
             }
         });
         root.getChildren().add(newBtn);
+
+        Button replayBtn = new Button("Replays");
+        replayBtn.setPrefSize(200,70);
+        replayBtn.setStyle("-fx-font-size: 28 arial;" +
+                "-fx-background-color: grey; -fx-text-fill: white;");
+        replayBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                primaryStage.setScene(replayMenu);
+                File replayFolder = new File("replays");
+                restartGame();
+                primaryStage.setScene(gameScene);
+                fieldCanvas = map.getCanvas();
+                gcMain = fieldCanvas.getGraphicsContext2D();
+                leftHudCanvas = map.getLeftHudCanvas();
+                gcLeftHud = leftHudCanvas.getGraphicsContext2D();
+                rightHudCanvas = map.getRightHudCanvas();
+                gcRightHud = rightHudCanvas.getGraphicsContext2D();
+                gcLeftHud.setFill(Color.WHITE);
+                gcLeftHud.setFont(new Font(24));
+                gcRightHud.setFill(Color.WHITE);
+                gcRightHud.setFont(new Font(24));
+                watchReplay();
+//                File[] files = replayFolder.listFiles();
+//
+//                for (int i = 0; i < files.length; i++) {
+//                    System.out.println(files[i].getName());
+//                }
+
+//                ObservableList<String> newLangs = FXCollections.observableArrayList("Java", "PHP", "C++");
+//                replaysList.setItems(newLangs);
+            }
+        });
+        root.getChildren().add(replayBtn);
 
         Button exitBtn = new Button("Exit");
         exitBtn.setPrefSize(200, 70);
@@ -158,6 +237,30 @@ public class Main extends Application {
         root.getChildren().add(exitBtn);
     }
 
+    public void createReplayMenu(Stage primaryStage){
+
+        replayRoot.setBackground(background);
+
+        replayRoot.setSpacing(10);
+        replayRoot.setPadding(new Insets(20, 20, 10, 20));
+        replayRoot.setAlignment(Pos.TOP_CENTER);
+
+
+        replayRoot.getChildren().add(replaysList);
+
+        Button returnBtn = new Button("Return to main menu");
+        returnBtn.setPrefSize(350, 70);
+        returnBtn.setStyle("-fx-font-size: 28 arial;" +
+                "-fx-background-color: grey; -fx-text-fill: white;");
+        returnBtn.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                primaryStage.setScene(mainMenuScene);
+            }
+        });
+        replayRoot.getChildren().add(returnBtn);
+
+    }
 
     public void gameStart(Stage primaryStage) {
 
@@ -374,6 +477,9 @@ public class Main extends Application {
                     gcLeftHud.clearRect(0, 0, 280, 720);
                     gcRightHud.clearRect(0, 0, 280, 720);
                 } else {
+
+                    writeInfo();
+
                     tank.sprite.render(gcMain);
 
                     map.getTower().sprite.render(gcMain);
@@ -404,8 +510,8 @@ public class Main extends Application {
                     gcRightHud.setStroke(Color.BROWN);
                     gcRightHud.setLineWidth(2.5);
                     gcRightHud.strokeRect(0, 0, GameMapView.hudSizeHalf, GameMapView.tileSize * GameMapView.height);
-                    gcLeftHud.clearRect(2, 2, 258, 718);
-                    gcRightHud.clearRect(2, 2, 258, 718);
+                    gcLeftHud.clearRect(2, 2, 258, 715);
+                    gcRightHud.clearRect(2, 2, 258, 715);
                     String scoreText = "Score: " + score;
                     gcLeftHud.fillText(scoreText, 5, 25);
                     gcLeftHud.fillText("Lives: ", 5, 70);
@@ -691,6 +797,7 @@ public class Main extends Application {
             enemyTank.currentTankPosY = GameMapView.enemyStartPos[enemyIndex][1];
             enemyTank.sprite.setPosition(GameMapView.enemyStartPos[enemyIndex][0], GameMapView.enemyStartPos[enemyIndex][1]);
             enemyTank.sprite.setSize(EnemyTank.tankSize);
+            enemyTank.id = enemyIndex;
             enemyTank.resetOrient();
             enemies.add(enemyTank);
         }
@@ -784,5 +891,185 @@ public class Main extends Application {
 
         pauseRoot.getChildren().addAll(pauseText, continueButton, returnMainMenu, exitButton);
         return pauseRoot;
+    }
+
+    public void writeInfo(){
+        try{
+            replayWrite.write("/////Level/////\n");
+            replayWrite.write(String.valueOf(map.level) + '\n');
+            replayWrite.write("/////Tank Pos/////\n");
+            replayWrite.write(tank.orient + '\n');
+            replayWrite.write(String.valueOf(tank.currentTankPosX) + '\n' + String.valueOf(tank.currentTankPosY) + '\n');
+            replayWrite.write("/////Bullets/////\n");
+            if(tank.bullets.isEmpty()){
+                replayWrite.write("Empty\n");
+            }
+            else{
+                for(bulletIndex = 0; bulletIndex < bullets.size(); bulletIndex++){
+                    replayWrite.write(bullets.get(bulletIndex).orient + '\n');
+                    replayWrite.write(String.valueOf(bullets.get(bulletIndex).bulletPosX) + '\n'
+                            + String.valueOf(bullets.get(bulletIndex).bulletPosY) + '\n');
+                }
+            }
+            replayWrite.write("/////Enemies/////\n");
+            for (enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++) {
+                replayWrite.write("Enemy" + String.valueOf(enemies.get(enemyIndex).id) + '\n');
+                replayWrite.write(enemies.get(enemyIndex).orient + '\n');
+                replayWrite.write(String.valueOf(enemies.get(enemyIndex).currentTankPosX) + '\n');
+                replayWrite.write(String.valueOf(enemies.get(enemyIndex).currentTankPosY) + '\n');
+                replayWrite.write("//Bullets//\n");
+                if(enemies.get(enemyIndex).bullets.isEmpty()){
+                    replayWrite.write("Empty\n");
+                }
+                else{
+                    for(enemyBulletIndex = 0; enemyBulletIndex < enemies.get(enemyIndex).bullets.size(); enemyBulletIndex++){
+                        replayWrite.write(enemies.get(enemyIndex).bullets.get(enemyBulletIndex).orient + '\n');
+                        replayWrite.write(String.valueOf(enemies.get(enemyIndex).bullets.get(enemyBulletIndex).bulletPosX) + '\n' +
+                                String.valueOf(enemies.get(enemyIndex).bullets.get(enemyBulletIndex).bulletPosY) + '\n');
+                    }
+                }
+            }
+            replayWrite.write("/////Broken Bricks/////\n");
+            for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++){
+                replayWrite.write(String.valueOf(brokenBricks.get(brokenBrickIndex).id) + '\n');
+            }
+            replayWrite.write("/////Bricks/////\n");
+            for(brickIndex = 0; brickIndex < bricks.size(); brickIndex++){
+                replayWrite.write(String.valueOf(bricks.get(brickIndex).id) + '\n');
+            }
+            replayWrite.write("//////\n");
+        }
+        catch (IOException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void watchReplay(){
+        try{
+            replayRead = new FileReader("replays/replay1.txt");
+            reader = new BufferedReader(replayRead);
+            replayAnimationTimer.start();
+        }
+        catch(IOException e){
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void createAnimationTimerForReplay(){
+        replayAnimationTimer = new AnimationTimer(){
+            @Override
+            public void handle(long now) {
+                try{
+                    String line = reader.readLine();
+                    if(line == null){
+                        stop();
+                    }
+                    gcMain.clearRect(0, 0, 720, 720);
+                    line = reader.readLine();
+                    map.level = Integer.parseInt(line);
+                    line = reader.readLine();
+                    line = reader.readLine();
+                    tank.changeTankOrient(line);
+                    line = reader.readLine();
+                    tank.currentTankPosX = Double.parseDouble(line);
+                    line = reader.readLine();
+                    tank.currentTankPosY = Double.parseDouble(line);
+                    tank.sprite.setPosition(tank.currentTankPosX, tank.currentTankPosY);
+                    tank.sprite.render(gcMain);
+                    line = reader.readLine();
+                    while(!line.equals("/////Enemies/////")){
+                        line = reader.readLine();
+                        if(line.equals("/////Enemies/////")){
+                            break;
+                        }
+                        if(line.equals("Empty")){
+                            line = reader.readLine();               //Enemies
+                            break;
+                        }
+                        bullet.orient = line;
+                        line = reader.readLine();
+                        bullet.bulletPosX = Double.parseDouble(line);
+                        line = reader.readLine();
+                        bullet.bulletPosY = Double.parseDouble(line);
+                        bullet.sprite.setPosition(bullet.bulletPosX, bullet.bulletPosY);
+                        bullet.sprite.render(gcMain);
+                    }                                           //Enemies
+                    line = reader.readLine();                   //Enemy0
+                    if(!line.equals("/////Broken Bricks/////")){
+                        while(!line.equals("/////Broken Bricks/////")){         //Enemy0
+
+                            line = reader.readLine();                           //orient
+                            if(line.equals("/////Broken Bricks/////")){
+                                break;
+                            }
+
+                            enemy.changeOrient(line);
+                            line = reader.readLine();
+                            enemy.currentTankPosX = Double.parseDouble(line);
+                            line = reader.readLine();
+                            enemy.currentTankPosY = Double.parseDouble(line);
+                            enemy.sprite.setPosition(enemy.currentTankPosX, enemy.currentTankPosY);
+                            enemy.sprite.setSize(EnemyTank.tankSize);
+                            enemy.sprite.render(gcMain);
+                            line = reader.readLine();                   //EnemyBullets
+                            line = reader.readLine();
+                            if(line.equals("Empty")){
+                                line = reader.readLine();
+                                //break;
+                            }
+                            else{
+                                while(line.equals("UP") || line.equals("DOWN") || line.equals("LEFT") || line.equals("RIGHT")){
+                                    bullet.orient = line;
+                                    line = reader.readLine();
+                                    bullet.bulletPosX = Double.parseDouble(line);
+                                    line = reader.readLine();
+                                    bullet.bulletPosY = Double.parseDouble(line);
+                                    bullet.sprite.setPosition(bullet.bulletPosX, bullet.bulletPosY);
+                                    bullet.sprite.render(gcMain);
+                                    line = reader.readLine();
+                                }
+                            }
+                        }
+                    }
+                                                    //BrokenBricks
+                    line = reader.readLine();       //Start ID
+                    for(brokenBrickIndex = 0; brokenBrickIndex < brokenBricks.size(); brokenBrickIndex++){
+                        if(line.equals("/////Bricks/////")){
+                            break;
+                        }
+                        while(Integer.parseInt(line) != brokenBricks.get(brokenBrickIndex).id){
+                            brokenBrickIndex++;
+                           
+                        }
+                        brokenBricks.get(brokenBrickIndex).render(gcMain);
+//                        if(Integer.parseInt(line) == brokenBricks.get(brokenBrickIndex).id){
+//                            brokenBricks.get(brokenBrickIndex).render(gcMain);
+//                        }
+                        line = reader.readLine();
+                    }
+                    line = reader.readLine();
+                    for (brickIndex = 0; brickIndex < bricks.size(); brickIndex++){
+                        if(line.equals("//////")){
+                            break;
+                        }
+                        while(Integer.parseInt(line) != bricks.get(brickIndex).id){
+                            brickIndex++;
+                        }
+                        bricks.get(brickIndex).render(gcMain);
+//                        if(Integer.parseInt(line) == bricks.get(brickIndex).id){
+//                            bricks.get(brickIndex).render(gcMain);
+//                        }
+                        line = reader.readLine();
+                    }
+
+                    for(metalIndex = 0; metalIndex < metals.size(); metalIndex++){
+                        metals.get(metalIndex).render(gcMain);
+                    }
+                }
+                catch (IOException e){
+                    System.out.println(e.getMessage());
+                }
+            }
+        };
     }
 }

@@ -46,7 +46,32 @@ public class Bullet {
             sprite.setSize(bulletHeight, bulletWidth);
             currentPos = bulletRight;
         }
+    }
 
+    public Bullet(){
+        speed = 0.2;
+        sprite = new Sprite();
+        //sprite.setPosition(bulletPosX, bulletPosY);
+        if(orient == "UP"){
+            sprite.setImage(bulletUp);
+            sprite.setSize(bulletWidth, bulletHeight);
+            currentPos = bulletUp;
+        }
+        if(orient == "DOWN"){
+            sprite.setImage(bulletDown);
+            sprite.setSize(bulletWidth, bulletHeight);
+            currentPos = bulletDown;
+        }
+        if(orient == "LEFT"){
+            sprite.setImage(bulletLeft);
+            sprite.setSize(bulletHeight, bulletWidth);
+            currentPos = bulletLeft;
+        }
+        if(orient == "RIGHT"){
+            sprite.setImage(bulletRight);
+            sprite.setSize(bulletHeight, bulletWidth);
+            currentPos = bulletRight;
+        }
     }
 
     public void render(GraphicsContext gc){

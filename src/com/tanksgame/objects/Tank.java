@@ -16,7 +16,7 @@ public class Tank {
     public double speed;
     public int lives;
     public int numberOfBullets;
-    private String orient;
+    public String orient;
     private Image tank1UpImg = new Image("assets/images/tank1/tank1Up.png");
     private Image tank1DownImg = new Image("assets/images/tank1/tank1Down.png");
     private Image tank1LeftImg = new Image("assets/images/tank1/tank1Left.png");
@@ -136,6 +136,24 @@ public class Tank {
 
     public Rectangle2D getBoundary() {
         return sprite.getBoundary(currentTankPosX * GameMapView.tileSize, currentTankPosY * GameMapView.tileSize, tankSize);
+    }
+
+    public void changeTankOrient(String orient){
+        this.orient = orient;
+        switch (orient){
+            case "UP":
+                sprite.setImage(tank1UpImg);
+                break;
+            case "DOWN":
+                sprite.setImage(tank1DownImg);
+                break;
+            case "LEFT":
+                sprite.setImage(tank1LeftImg);
+                break;
+            case "RIGHT":
+                sprite.setImage(tank1RightImg);
+                break;
+        }
     }
 
     public void resetTankOrient(){

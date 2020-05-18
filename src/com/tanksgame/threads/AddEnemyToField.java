@@ -13,6 +13,7 @@ public class AddEnemyToField extends Thread{
     private int numOfSpawned;
     private boolean[] canSpawn;
     public boolean pause = false;
+    public int id = GameMapView.enemyStartPos.length - 1;
 
     public AddEnemyToField(ArrayList<EnemyTank> enemies){
         this.enemies = enemies;
@@ -59,6 +60,8 @@ public class AddEnemyToField extends Thread{
                     enemyTank.sprite.setImage(enemyTank.getTank1DownImg());
                     enemyTank.sprite.setPosition(GameMapView.enemyStartPos[pos][0], GameMapView.enemyStartPos[pos][1]);
                     enemyTank.sprite.setSize(EnemyTank.tankSize);
+                    this.id++;
+                    enemyTank.id = this.id;
                     enemies.add(enemyTank);
                     numOfSpawned++;
                 }

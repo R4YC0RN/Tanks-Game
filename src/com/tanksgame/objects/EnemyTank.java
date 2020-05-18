@@ -38,6 +38,8 @@ public class EnemyTank{
     public boolean threadCreated = false;
     public boolean shootPause = false;
 
+    public int id;
+
     public String orient;
     private List<String> orients = Arrays.asList("UP", "DOWN", "LEFT", "RIGHT");
     Random rand = new Random();
@@ -141,6 +143,24 @@ public class EnemyTank{
                 orient = orients.get(randomIndex);
                 flag = false;
             }
+        }
+    }
+
+    public void changeOrient(String orient){
+        this.orient = orient;
+        switch (orient){
+            case "UP":
+                sprite.setImage(tank1UpImg);
+                break;
+            case "DOWN":
+                sprite.setImage(tank1DownImg);
+                break;
+            case "LEFT":
+                sprite.setImage(tank1LeftImg);
+                break;
+            case "RIGHT":
+                sprite.setImage(tank1RightImg);
+                break;
         }
     }
 

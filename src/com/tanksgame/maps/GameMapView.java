@@ -144,6 +144,7 @@ public class GameMapView {
                 brick = new Brick();
                 brick.sprite.setImage(brick.getBrickImg());
                 brick.sprite.setPosition(brickPos[bricksIndex][0], brickPos[bricksIndex][1]);
+                brick.sprite.id = bricksIndex;
                 bricksList.add(brick.sprite);
             }
                 break;
@@ -152,6 +153,7 @@ public class GameMapView {
                     brick = new Brick();
                     brick.sprite.setImage(brick.getBrickImg());
                     brick.sprite.setPosition(brickPos2[bricksIndex][0], brickPos2[bricksIndex][1]);
+                    brick.sprite.id = bricksIndex;
                     bricksList.add(brick.sprite);
                 }
                 break;
@@ -167,6 +169,7 @@ public class GameMapView {
                 brokenBrick = new Brick();
                 brokenBrick.sprite.setImage(brokenBrick.getBrokenBrickImg());
                 brokenBrick.sprite.setPosition(brickPos[brokenBricksIndex][0], brickPos[brokenBricksIndex][1]);
+                brokenBrick.sprite.id = brokenBricksIndex;
                 brokenBricksList.add(brokenBrick.sprite);
             }
                 break;
@@ -175,6 +178,7 @@ public class GameMapView {
                     brokenBrick = new Brick();
                     brokenBrick.sprite.setImage(brokenBrick.getBrokenBrickImg());
                     brokenBrick.sprite.setPosition(brickPos2[brokenBricksIndex][0], brickPos2[brokenBricksIndex][1]);
+                    brokenBrick.sprite.id = brokenBricksIndex;
                     brokenBricksList.add(brokenBrick.sprite);
                 }
                 break;
@@ -189,6 +193,7 @@ public class GameMapView {
                     metal = new Metal();
                     metal.sprite.setImage(metal.getMetalImg());
                     metal.sprite.setPosition(metalPos[metalIndex][0], metalPos[metalIndex][1]);
+                    metal.sprite.id = metalIndex;
                     metalList.add(metal.sprite);
                 }
                 break;
@@ -197,6 +202,7 @@ public class GameMapView {
                     metal = new Metal();
                     metal.sprite.setImage(metal.getMetalImg());
                     metal.sprite.setPosition(metalPos2[metalIndex][0], metalPos2[metalIndex][1]);
+                    metal.sprite.id = metalIndex;
                     metalList.add(metal.sprite);
                 }
                 break;
@@ -229,6 +235,7 @@ public class GameMapView {
             enemyTank.sprite.setImage(enemyTank.getTank1DownImg());
             enemyTank.sprite.setPosition(enemyStartPos[enemyTankIndex][0], enemyStartPos[enemyTankIndex][1]);
             enemyTank.sprite.setSize(EnemyTank.tankSize);
+            enemyTank.id = enemyTankIndex;
             enemyTanksList.add(enemyTank);
         }
     }

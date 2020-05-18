@@ -13,6 +13,8 @@ public class Sprite {
     //private double size;
     private double width;
     private double height;
+    public int id;
+
 
     public Sprite() {
         //size = GameMapView.tileSize;
