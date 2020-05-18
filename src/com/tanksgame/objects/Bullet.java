@@ -82,6 +82,30 @@ public class Bullet {
         return sprite.getBoundary(bulletPosX * GameMapView.tileSize, bulletPosY * GameMapView.tileSize, bulletWidth, bulletHeight);
     }
 
+    public void changeOrient(String orient){
+        this.orient = orient;
+        if(orient == "UP"){
+            sprite.setImage(bulletUp);
+            sprite.setSize(bulletWidth, bulletHeight);
+            currentPos = bulletUp;
+        }
+        if(orient == "DOWN"){
+            sprite.setImage(bulletDown);
+            sprite.setSize(bulletWidth, bulletHeight);
+            currentPos = bulletDown;
+        }
+        if(orient == "LEFT"){
+            sprite.setImage(bulletLeft);
+            sprite.setSize(bulletHeight, bulletWidth);
+            currentPos = bulletLeft;
+        }
+        if(orient == "RIGHT"){
+            sprite.setImage(bulletRight);
+            sprite.setSize(bulletHeight, bulletWidth);
+            currentPos = bulletRight;
+        }
+    }
+
     public void setSpeed(double speed){
         this.speed = speed;
     }

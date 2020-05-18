@@ -30,6 +30,7 @@ public class AddEnemyToField extends Thread{
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             e.printStackTrace();
         }
         while(!enemiesEnded){
@@ -68,6 +69,7 @@ public class AddEnemyToField extends Thread{
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     e.printStackTrace();
                 }
             }

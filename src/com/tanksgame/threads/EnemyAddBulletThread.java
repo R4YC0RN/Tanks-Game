@@ -19,6 +19,7 @@ public class EnemyAddBulletThread extends Thread{
             Thread.sleep(2000);
         }
         catch (InterruptedException e){
+            Thread.currentThread().interrupt();
             System.out.println("Thread has been interrupted");
         }
         while(enemy.alive){
@@ -26,6 +27,7 @@ public class EnemyAddBulletThread extends Thread{
                 Thread.sleep(2000);
             }
             catch (InterruptedException e){
+                Thread.currentThread().interrupt();
                 System.out.println("Thread has been interrupted");
             }
             System.out.println(currentThread().getName());
